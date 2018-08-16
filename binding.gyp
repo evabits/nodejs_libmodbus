@@ -2,6 +2,7 @@
     "includes": [ "deps/common-libmodbus.gypi" ],
       "variables": {
       "libmodbus%":"internal",
+      "libmodbus_include%":"/usr/include/modbus/",
       "libmodbus_libname%":"modbus"
     },
     'targets': [
@@ -12,7 +13,7 @@
             ],
             "conditions": [
                 ["libmodbus != 'internal'", {
-                    "include_dirs": [ "<(libmodbus)/include/modbus" ],
+                    "include_dirs": [ "<(libmodbus_include)" ],
                     "libraries": [
                     "-l<(libmodbus_libname)"
                     ],
