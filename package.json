@@ -17,7 +17,7 @@
     "email": "mail@tuxnsk.ru"
   },
   "binary": {
-    "module_path": "./build/Release/",
+    "module_path": "./build/bindings/",
     "module_name": "nodejs_modbus",
     "host": "https://mapbox-node-binary.s3.amazonaws.com"
   },
