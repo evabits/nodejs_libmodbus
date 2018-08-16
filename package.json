@@ -10,18 +10,29 @@
     "node": ">= 0.8.0"
   },
   "scripts": {
-    "install": "node-gyp configure && node-gyp build",
-    "preuninstall": "rm -rf libmodbus build"
+    "install": "node-pre-gyp install --fallback-to-build"
   },
   "author": {
     "name": "Davydov Denis",
     "email": "mail@tuxnsk.ru"
+  },
+  "binary": {
+    "module_path": "./lib/binding/{node_abi}-{platform}-{arch}",
+    "module_name": "nodejs_modbus",
+    "host": "https://mapbox-node-binary.s3.amazonaws.com"
   },
   "maintainers": [
     {
       "name": "Davydov Denis",
       "email": "mail@tuxnsk.ru"
     }
+  ],
+  "dependencies": {
+    "nan": "~2.10.0",
+    "node-pre-gyp": "~0.6.31"
+  },
+  "bundledDependencies": [
+      "node-pre-gyp"
   ],
   "repository": {
     "type": "git",
