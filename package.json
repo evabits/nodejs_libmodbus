@@ -10,7 +10,7 @@
     "node": ">= 0.8.0"
   },
   "scripts": {
-    "install": "node-pre-gyp install --fallback-to-build"
+    "install": "node-pre-gyp install --internal --fallback-to-build"
   },
   "author": {
     "name": "Davydov Denis",
