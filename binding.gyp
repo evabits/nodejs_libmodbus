@@ -9,8 +9,9 @@
         {
             'target_name': 'modbus_binding',
             "include_dirs" : [
-                "<!(node -e \"require('nan')\")"
+                "<!@(node -p \"require('node-addon-api').include\")"
             ],
+            "defines": ['NAPI_DISABLE_CPP_EXCEPTIONS'],
             "conditions": [
                 ["libmodbus == 'internal'", {
                     "include_dirs": [ "<(libmodbus_include)" ],
@@ -18,24 +19,11 @@
                     "-l<(libmodbus_libname)"
                     ],
                     "conditions": [ [ "OS=='linux'", {"libraries+":["-Wl,-rpath=<@(libmodbus)/lib"]} ] ],
-                    "conditions": [ [ "OS!='win'", {"libraries+":["-L<@(libmodbus)/lib"]} ] ],
-                    'msvs_settings': {
-                    'VCLinkerTool': {
-                        'AdditionalLibraryDirectories': [
-                        '<(libmodbus)/lib'
-                        ],
-                    },
-                    }
-                },
-                {
-                    "dependencies": [
-                    "deps/libmodbus.gyp:libmodbus"
-                    ]
                 }
                 ]
             ],
             'sources': [
-                './src/main.cpp'
+                './src/main.cc'
             ],
         },
         {

@@ -1,73 +1,55 @@
-
-#include <v8.h>
-#include <node.h>
-#include <node_version.h>
-#include <uv.h>
 #include <modbus.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h> 
 #include <sys/socket.h>
-#include <nan.h>
+#include <napi.h>
 
 #include <iostream>
 
 // using namespace v8;
-using namespace node;
 using namespace std;
-using namespace Nan;
-using v8::FunctionTemplate;
 
 // finger to the sky
 #define REPORT_LEN 0xFF
 
-#if (NODE_MODULE_VERSION < 12)
-
-#define TO_EXTERNAL(sb) \
-    External::Wrap(sb)
-#define FROM_EXTERNAL(sb) \
-    External::Unwrap(sb)
-
-#else
-
-#define TO_EXTERNAL(sb) \
-    Nan::New<External>(sb)
-#define FROM_EXTERNAL(sb) \
-    External::Cast(*sb)->Value()
-
-#endif
-
 // modbus_t *modbus_new_rtu(const char *device, int baud, char parity, int data_bit, int stop_bit);
 // External new_rtu(String, Integer, String, Integer, Integer);
-NAN_METHOD(js_new_rtu) {
-	v8::Local<v8::String> device = info[0].As<v8::String>();
-	int baud = Nan::To<int>(info[1]).FromJust();
-	v8::Local<v8::String> parity_str = info[2].As<v8::String>();
-	int data_bit = Nan::To<int>(info[3]).FromJust();
-	int stop_bit = Nan::To<int>(info[4]).FromJust();
-	Nan::Utf8String par(parity_str);
-	Nan::Utf8String dev(device);
+Napi::Value js_new_rtu(const Napi::CallbackInfo& info) {
+	Napi::Env env = info.Env();
+
+	if (info.Length() < 5) {
+		Napi::Error::New(env,"Wrong number of arguments").ThrowAsJavaScriptException();
+		return env.Null();
+	}
+	Napi::String device = info[0].As<Napi::String>();
+	int baud = info[1].As<Napi::Number>().Int32Value();
+	Napi::String parity_str = info[2].As<Napi::String>();
+	int data_bit = info[3].As<Napi::Number>().Int32Value();
+	int stop_bit = info[4].As<Napi::Number>().Int32Value();
 	
-	char parity = (*par)[0];
+	string dev(device);
+	string par(parity_str);
+	char parity = par.c_str()[0];
 	
-	modbus_t *ctx = modbus_new_rtu(*dev, baud, parity, data_bit, stop_bit);
-	
+	modbus_t *ctx = modbus_new_rtu(dev.c_str(), baud, parity, data_bit, stop_bit);
+		
 	if (ctx == NULL) {
-		info.GetReturnValue().SetNull();
+		return env.Null();
 	} else {
-		info.GetReturnValue().Set(New<v8::External>(ctx));
+		return Napi::External<modbus_t*>::New(env, &ctx);
 	}
 }
 
-// // int modbus_rtu_get_serial_mode(modbus_t *ctx);
-// // Integer rtu_get_serial_mode(External);
-// void js_rtu_get_serial_mode(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// int modbus_rtu_get_serial_mode(modbus_t *ctx);
+// Integer rtu_get_serial_mode(External);
+Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(*info[0].As<Napi::External<modbus_t *>>().Data());
 	
-// 	int ret = modbus_rtu_get_serial_mode(ctx);
+	int ret = modbus_rtu_get_serial_mode(ctx);
 	
-// 	args.GetReturnValue().Set(ret);
-// }
+	return Napi::Value::From(info.Env(), ret);
+}
 
 // // int modbus_rtu_set_serial_mode(modbus_t *ctx, int mode);
 // // Integer rtu_set_serial_mode(External, Integer);
@@ -900,77 +882,77 @@ NAN_METHOD(js_new_rtu) {
 // 	}
 // }
 
-NAN_MODULE_INIT(init) {
+Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	
 	// constants
-	Set(target, New<v8::String>("LIBMODBUS_VERSION_MAJOR").ToLocalChecked(), New<v8::Number>(LIBMODBUS_VERSION_MAJOR));
-	// Set(target, New<String>("LIBMODBUS_VERSION_MINOR").ToLocalChecked(), New<Number>(LIBMODBUS_VERSION_MINOR));
-	// Set(target, New<String>("LIBMODBUS_VERSION_MICRO").ToLocalChecked(), New<Number>(LIBMODBUS_VERSION_MICRO));
-	// Set(target, New<String>("LIBMODBUS_VERSION_STRING").ToLocalChecked(), String::NewFromUtf8(isolate, LIBMODBUS_VERSION_STRING));
+	exports.Set(Napi::String::New(env,"LIBMODBUS_VERSION_MAJOR"), Napi::Number::New(env, LIBMODBUS_VERSION_MAJOR));
+	exports.Set(Napi::String::New(env,"LIBMODBUS_VERSION_MINOR"), Napi::Number::New(env, LIBMODBUS_VERSION_MINOR));
+	exports.Set(Napi::String::New(env,"LIBMODBUS_VERSION_MICRO"), Napi::Number::New(env, LIBMODBUS_VERSION_MICRO));
+	exports.Set(Napi::String::New(env,"LIBMODBUS_VERSION_STRING"), Napi::String::New(env, LIBMODBUS_VERSION_STRING));
 	// //target->Set(target, New<String>("LIBMODBUS_VERSION_HEX").ToLocalChecked(), New<Number>(LIBMODBUS_VERSION_HEX)); bug in header
 	
-	// Set(target, New<String>("FALSE").ToLocalChecked(), New<Number>(FALSE));
-	// Set(target, New<String>("TRUE").ToLocalChecked(), New<Number>(TRUE));
+	exports.Set(Napi::String::New(env,"FALSE"), Napi::Number::New(env,FALSE));
+	exports.Set(Napi::String::New(env,"TRUE"), Napi::Number::New(env,TRUE));
 
-	// Set(target, New<String>("OFF").ToLocalChecked(), New<Number>(OFF));
-	// Set(target, New<String>("ON").ToLocalChecked(), New<Number>(ON));
+	exports.Set(Napi::String::New(env,"OFF"), Napi::Number::New(env,OFF));
+	exports.Set(Napi::String::New(env,"ON"), Napi::Number::New(env,ON));
 
-	// Set(target, New<String>("MODBUS_BROADCAST_ADDRESS").ToLocalChecked(), New<Number>(MODBUS_BROADCAST_ADDRESS));
+	exports.Set(Napi::String::New(env,"MODBUS_BROADCAST_ADDRESS"), Napi::Number::New(env,MODBUS_BROADCAST_ADDRESS));
 
-	// Set(target, New<String>("MODBUS_MAX_READ_BITS").ToLocalChecked(), New<Number>(MODBUS_MAX_READ_BITS));
-	// Set(target, New<String>("MODBUS_MAX_WRITE_BITS").ToLocalChecked(), New<Number>(MODBUS_MAX_WRITE_BITS));
+	exports.Set(Napi::String::New(env,"MODBUS_MAX_READ_BITS"), Napi::Number::New(env,MODBUS_MAX_READ_BITS));
+	exports.Set(Napi::String::New(env,"MODBUS_MAX_WRITE_BITS"), Napi::Number::New(env,MODBUS_MAX_WRITE_BITS));
 
-	// Set(target, New<String>("MODBUS_MAX_READ_REGISTERS").ToLocalChecked(), New<Number>(MODBUS_MAX_READ_REGISTERS));
-	// Set(target, New<String>("MODBUS_MAX_WRITE_REGISTERS").ToLocalChecked(), New<Number>(MODBUS_MAX_WRITE_REGISTERS));
-	// Set(target, New<String>("MODBUS_MAX_WR_WRITE_REGISTERS").ToLocalChecked(), New<Number>(MODBUS_MAX_WR_WRITE_REGISTERS));
+	exports.Set(Napi::String::New(env,"MODBUS_MAX_READ_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_READ_REGISTERS));
+	exports.Set(Napi::String::New(env,"MODBUS_MAX_WRITE_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_WRITE_REGISTERS));
+	exports.Set(Napi::String::New(env,"MODBUS_MAX_WR_WRITE_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_WR_WRITE_REGISTERS));
 
-	// Set(target, New<String>("MODBUS_ENOBASE").ToLocalChecked(), New<Number>(MODBUS_ENOBASE));
+	exports.Set(Napi::String::New(env,"MODBUS_ENOBASE"), Napi::Number::New(env,MODBUS_ENOBASE));
 
-	// Set(target, New<String>("MODBUS_EXCEPTION_ILLEGAL_FUNCTION").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_ILLEGAL_FUNCTION));
-	// Set(target, New<String>("MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS));
-	// Set(target, New<String>("MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE));
-	// Set(target, New<String>("MODBUS_EXCEPTION_SLAVE_OR_SERVER_FAILURE").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_SLAVE_OR_SERVER_FAILURE));
-	// Set(target, New<String>("MODBUS_EXCEPTION_ACKNOWLEDGE").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_ACKNOWLEDGE));
-	// Set(target, New<String>("MODBUS_EXCEPTION_SLAVE_OR_SERVER_BUSY").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_SLAVE_OR_SERVER_BUSY));
-	// Set(target, New<String>("MODBUS_EXCEPTION_NEGATIVE_ACKNOWLEDGE").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_NEGATIVE_ACKNOWLEDGE));
-	// Set(target, New<String>("MODBUS_EXCEPTION_MEMORY_PARITY").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_MEMORY_PARITY));
-	// Set(target, New<String>("MODBUS_EXCEPTION_NOT_DEFINED").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_NOT_DEFINED));
-	// Set(target, New<String>("MODBUS_EXCEPTION_GATEWAY_PATH").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_GATEWAY_PATH));
-	// Set(target, New<String>("MODBUS_EXCEPTION_GATEWAY_TARGET").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_GATEWAY_TARGET));
-	// Set(target, New<String>("MODBUS_EXCEPTION_MAX").ToLocalChecked(), New<Number>(MODBUS_EXCEPTION_MAX));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_ILLEGAL_FUNCTION"), Napi::Number::New(env,MODBUS_EXCEPTION_ILLEGAL_FUNCTION));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS"), Napi::Number::New(env,MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE"), Napi::Number::New(env,MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_SLAVE_OR_SERVER_FAILURE"), Napi::Number::New(env,MODBUS_EXCEPTION_SLAVE_OR_SERVER_FAILURE));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_ACKNOWLEDGE"), Napi::Number::New(env,MODBUS_EXCEPTION_ACKNOWLEDGE));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_SLAVE_OR_SERVER_BUSY"), Napi::Number::New(env,MODBUS_EXCEPTION_SLAVE_OR_SERVER_BUSY));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_NEGATIVE_ACKNOWLEDGE"), Napi::Number::New(env,MODBUS_EXCEPTION_NEGATIVE_ACKNOWLEDGE));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_MEMORY_PARITY"), Napi::Number::New(env,MODBUS_EXCEPTION_MEMORY_PARITY));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_NOT_DEFINED"), Napi::Number::New(env,MODBUS_EXCEPTION_NOT_DEFINED));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_GATEWAY_PATH"), Napi::Number::New(env,MODBUS_EXCEPTION_GATEWAY_PATH));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_GATEWAY_TARGET"), Napi::Number::New(env,MODBUS_EXCEPTION_GATEWAY_TARGET));
+	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_MAX"), Napi::Number::New(env,MODBUS_EXCEPTION_MAX));
 
-	// Set(target, New<String>("EMBXILFUN").ToLocalChecked(), New<Number>(EMBXILFUN));
-	// Set(target, New<String>("EMBXILADD").ToLocalChecked(), New<Number>(EMBXILADD));
-	// Set(target, New<String>("EMBXILVAL").ToLocalChecked(), New<Number>(EMBXILVAL));
-	// Set(target, New<String>("EMBXSFAIL").ToLocalChecked(), New<Number>(EMBXSFAIL));
-	// Set(target, New<String>("EMBXACK").ToLocalChecked(), New<Number>(EMBXACK));
-	// Set(target, New<String>("EMBXSBUSY").ToLocalChecked(), New<Number>(EMBXSBUSY));
-	// Set(target, New<String>("EMBXNACK").ToLocalChecked(), New<Number>(EMBXNACK));
-	// Set(target, New<String>("EMBXMEMPAR").ToLocalChecked(), New<Number>(EMBXMEMPAR));
-	// Set(target, New<String>("EMBXGPATH").ToLocalChecked(), New<Number>(EMBXGPATH));
-	// Set(target, New<String>("EMBXGTAR").ToLocalChecked(), New<Number>(EMBXGTAR));
+	exports.Set(Napi::String::New(env,"EMBXILFUN"), Napi::Number::New(env,EMBXILFUN));
+	exports.Set(Napi::String::New(env,"EMBXILADD"), Napi::Number::New(env,EMBXILADD));
+	exports.Set(Napi::String::New(env,"EMBXILVAL"), Napi::Number::New(env,EMBXILVAL));
+	exports.Set(Napi::String::New(env,"EMBXSFAIL"), Napi::Number::New(env,EMBXSFAIL));
+	exports.Set(Napi::String::New(env,"EMBXACK"), Napi::Number::New(env,EMBXACK));
+	exports.Set(Napi::String::New(env,"EMBXSBUSY"), Napi::Number::New(env,EMBXSBUSY));
+	exports.Set(Napi::String::New(env,"EMBXNACK"), Napi::Number::New(env,EMBXNACK));
+	exports.Set(Napi::String::New(env,"EMBXMEMPAR"), Napi::Number::New(env,EMBXMEMPAR));
+	exports.Set(Napi::String::New(env,"EMBXGPATH"), Napi::Number::New(env,EMBXGPATH));
+	exports.Set(Napi::String::New(env,"EMBXGTAR"), Napi::Number::New(env,EMBXGTAR));
 
-	// Set(target, New<String>("EMBBADCRC").ToLocalChecked(), New<Number>(EMBBADCRC));
-	// Set(target, New<String>("EMBBADDATA").ToLocalChecked(), New<Number>(EMBBADDATA));
-	// Set(target, New<String>("EMBBADEXC").ToLocalChecked(), New<Number>(EMBBADEXC));
-	// Set(target, New<String>("EMBUNKEXC").ToLocalChecked(), New<Number>(EMBUNKEXC));
-	// Set(target, New<String>("EMBMDATA").ToLocalChecked(), New<Number>(EMBMDATA));
+	exports.Set(Napi::String::New(env,"EMBBADCRC"), Napi::Number::New(env,EMBBADCRC));
+	exports.Set(Napi::String::New(env,"EMBBADDATA"), Napi::Number::New(env,EMBBADDATA));
+	exports.Set(Napi::String::New(env,"EMBBADEXC"), Napi::Number::New(env,EMBBADEXC));
+	exports.Set(Napi::String::New(env,"EMBUNKEXC"), Napi::Number::New(env,EMBUNKEXC));
+	exports.Set(Napi::String::New(env,"EMBMDATA"), Napi::Number::New(env,EMBMDATA));
 
-	// Set(target, New<String>("MODBUS_ERROR_RECOVERY_NONE").ToLocalChecked(), New<Number>(MODBUS_ERROR_RECOVERY_NONE));
-	// Set(target, New<String>("MODBUS_ERROR_RECOVERY_LINK").ToLocalChecked(), New<Number>(MODBUS_ERROR_RECOVERY_LINK));
-	// Set(target, New<String>("MODBUS_ERROR_RECOVERY_PROTOCOL").ToLocalChecked(), New<Number>(MODBUS_ERROR_RECOVERY_PROTOCOL));
+	exports.Set(Napi::String::New(env,"MODBUS_ERROR_RECOVERY_NONE"), Napi::Number::New(env,MODBUS_ERROR_RECOVERY_NONE));
+	exports.Set(Napi::String::New(env,"MODBUS_ERROR_RECOVERY_LINK"), Napi::Number::New(env,MODBUS_ERROR_RECOVERY_LINK));
+	exports.Set(Napi::String::New(env,"MODBUS_ERROR_RECOVERY_PROTOCOL"), Napi::Number::New(env,MODBUS_ERROR_RECOVERY_PROTOCOL));
 
-	// Set(target, New<String>("MODBUS_RTU_MAX_ADU_LENGTH").ToLocalChecked(), New<Number>(MODBUS_RTU_MAX_ADU_LENGTH));
-	// Set(target, New<String>("MODBUS_RTU_RS232").ToLocalChecked(), New<Number>(MODBUS_RTU_RS232));
-	// Set(target, New<String>("MODBUS_RTU_RS485").ToLocalChecked(), New<Number>(MODBUS_RTU_RS485));
+	exports.Set(Napi::String::New(env,"MODBUS_RTU_MAX_ADU_LENGTH"), Napi::Number::New(env,MODBUS_RTU_MAX_ADU_LENGTH));
+	exports.Set(Napi::String::New(env,"MODBUS_RTU_RS232"), Napi::Number::New(env,MODBUS_RTU_RS232));
+	exports.Set(Napi::String::New(env,"MODBUS_RTU_RS485"), Napi::Number::New(env,MODBUS_RTU_RS485));
 
-	// Set(target, New<String>("MODBUS_TCP_DEFAULT_PORT").ToLocalChecked(), New<Number>(MODBUS_TCP_DEFAULT_PORT));
-	// Set(target, New<String>("MODBUS_TCP_SLAVE").ToLocalChecked(), New<Number>(MODBUS_TCP_SLAVE));
-	// Set(target, New<String>("MODBUS_TCP_MAX_ADU_LENGTH").ToLocalChecked(), New<Number>(MODBUS_TCP_MAX_ADU_LENGTH));
+	exports.Set(Napi::String::New(env,"MODBUS_TCP_DEFAULT_PORT"), Napi::Number::New(env,MODBUS_TCP_DEFAULT_PORT));
+	exports.Set(Napi::String::New(env,"MODBUS_TCP_SLAVE"), Napi::Number::New(env,MODBUS_TCP_SLAVE));
+	exports.Set(Napi::String::New(env,"MODBUS_TCP_MAX_ADU_LENGTH"), Napi::Number::New(env,MODBUS_TCP_MAX_ADU_LENGTH));
 
 	// Functions
-	Set(target, New<v8::String>("new_rtu").ToLocalChecked(), GetFunction(New<v8::FunctionTemplate>(js_new_rtu)).ToLocalChecked());
-	// Set(target, New<String>("rtu_get_serial_mode").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_rtu_get_serial_mode).ToLocalChecked());
+	exports.Set(Napi::String::New(env, "new_rtu"), Napi::Function::New(env,js_new_rtu));
+	exports.Set(Napi::String::New(env, "rtu_get_serial_mode"), Napi::Function::New(env,js_rtu_get_serial_mode));
 	// Set(target, New<String>("rtu_set_serial_mode").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_rtu_set_serial_mode).ToLocalChecked());
 	// Set(target, New<String>("rtu_get_rts").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_rtu_get_rts).ToLocalChecked());
 	// Set(target, New<String>("rtu_set_rts").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_rtu_set_rts).ToLocalChecked());
@@ -1032,6 +1014,7 @@ NAN_MODULE_INIT(init) {
 
 	// // HEX Decoding stuff
 	// Set(target, New<String>("hex_decode", v8::String::kInternalizedString).ToLocalChecked(), GetFunction(New<FunctionTemplate>(hex_decode).ToLocalChecked());
+	return exports;
 }
 
-NODE_MODULE(modbus_binding, init)
+NODE_API_MODULE(modbus_binding, Init)
