@@ -1,56 +1,53 @@
 {
-    'conditions': [
-        [
-            'OS=="mac"', {
-                'targets': [
-                    {
-                        'target_name': 'modbus_binding',
-                        'cflags': [
-                            '-Wall',
-                        ],
-                    'xcode_settings': {
-                        'OTHER_CFLAGS': [ '-ObjC' ],
-                        'OTHER_CPLUSPLUSFLAGS' : ['-std=c++11','-stdlib=libc++', '-v'],
-                        'OTHER_LDFLAGS': ['-stdlib=libc++'],
-                        'MACOSX_DEPLOYMENT_TARGET': '10.11',
-                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES', 
-                        },
-                    'libraries': [
-                        '../libmodbus/src/.libs/libmodbus.dylib',
+    "includes": [ ],
+      "variables": {
+      "libmodbus%":"internal",
+      "libmodbus_include%":"/usr/include/modbus/",
+      "libmodbus_libname%":"modbus"
+    },
+    'targets': [
+        {
+            'target_name': 'modbus_binding',
+            "include_dirs" : [
+                "<!(node -e \"require('nan')\")"
+            ],
+            "conditions": [
+                ["libmodbus == 'internal'", {
+                    "include_dirs": [ "<(libmodbus_include)" ],
+                    "libraries": [
+                    "-l<(libmodbus_libname)"
                     ],
-                        'include_dirs': [
-                            './libmodbus/src/',
-                        ],
-                        'sources': [
-                            './src/main.cpp'
-                        ],
-                    },
-                ]
-            },
-        ],
-        [
-            'OS=="linux"', {
-                'targets': [
-                    {
-                        'target_name': 'modbus_binding',
-                        'cflags': [
-                            '-Wall',
-                        ],
-                        'ldflags': [
-                            '../libmodbus/src/.libs/modbus.o',
-                            '../libmodbus/src/.libs/modbus-data.o',
-                            '../libmodbus/src/.libs/modbus-rtu.o',
-                            '../libmodbus/src/.libs/modbus-tcp.o',
-                        ],
-                        'include_dirs': [
-                            './libmodbus/src/',
-                        ],
-                        'sources': [
-                            './src/main.cpp'
+                    "conditions": [ [ "OS=='linux'", {"libraries+":["-Wl,-rpath=<@(libmodbus)/lib"]} ] ],
+                    "conditions": [ [ "OS!='win'", {"libraries+":["-L<@(libmodbus)/lib"]} ] ],
+                    'msvs_settings': {
+                    'VCLinkerTool': {
+                        'AdditionalLibraryDirectories': [
+                        '<(libmodbus)/lib'
                         ],
                     },
+                    }
+                },
+                {
+                    "dependencies": [
+                    "deps/libmodbus.gyp:libmodbus"
+                    ]
+                }
                 ]
-            },
-        ]
+            ],
+            'sources': [
+                './src/main.cpp'
+            ],
+        },
+        {
+            "target_name": "action_after_build",
+            "type": "none",
+            "dependencies": [ "modbus_binding" ],
+            "copies": [
+                {
+                    "files": [ "<(PRODUCT_DIR)/modbus_binding.node" ],
+                    "destination": "<(module_path)"
+                }
+            ]
+        }
     ]
 }
