@@ -437,110 +437,106 @@ Napi::Value js_write_registers(const Napi::CallbackInfo& info) {
 	return Napi::Number::New(info.Env(), ret);
 }
 
-// // int modbus_write_and_read_registers(modbus_t *ctx, int write_addr, int write_nb, const uint16_t *src, int read_addr, int read_nb, const uint16_t *dest);
-// // Integer write_and_read_registers(External, Integer, Integer, Array, Integer, Integer, Array);
-// Napi::Value js_write_and_read_registers(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
-// 	int write_addr = info[1].As<Napi::Number>().Int32Value();
-// 	int write_nb = info[2].As<Napi::Number>().Int32Value();
-// 	Local<Array> src_arr = Local<Array>::Cast(args[3]);
-// 	int read_addr = Local<Integer>::Cast(args[4])->Int32Value();
-// 	int read_nb = Local<Integer>::Cast(args[5])->Int32Value();
-// 	Local<Array> dest_arr = Local<Array>::Cast(args[6]);
+// int modbus_write_and_read_registers(modbus_t *ctx, int write_addr, int write_nb, const uint16_t *src, int read_addr, int read_nb, const uint16_t *dest);
+// Integer write_and_read_registers(External, Integer, Integer, Array, Integer, Integer, Array);
+Napi::Value js_write_and_read_registers(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	int write_addr = info[1].As<Napi::Number>().Int32Value();
+	int write_nb = info[2].As<Napi::Number>().Int32Value();
+	Napi::Array src_arr = info[3].As<Napi::Array>();
+	int read_addr = info[4].As<Napi::Number>().Int32Value();
+	int read_nb = info[5].As<Napi::Number>().Int32Value();
+	Napi::Array dest_arr = info[6].As<Napi::Array>();
 	
-// 	uint16_t src[write_nb];
-// 	for (int i = 0; i < write_nb; i++) src[i] = src_arr->Get(i)->Uint32Value();
+	uint16_t src[write_nb];
+	for (int i = 0; i < write_nb; i++) src[i] = src_arr.Get(i).As<Napi::Number>().Uint32Value();
 	
-// 	uint16_t dest[read_nb];
+	uint16_t dest[read_nb];
 	
-// 	int ret = modbus_write_and_read_registers(ctx,
-// 		write_addr, write_nb, src,
-// 		read_addr, read_nb, dest);
+	int ret = modbus_write_and_read_registers(ctx,
+		write_addr, write_nb, src,
+		read_addr, read_nb, dest);
 	
-// 	for (int i = 0; i < read_nb; i++) dest_arr->Set(i, Number::New(isolate, dest[i]));
+	for (int i = 0; i < read_nb; i++) dest_arr.Set(uint32_t(i), uint32_t(dest[i]));
 	
-// 	return Napi::Number::New(info.Env(), ret);
-// }
+	return Napi::Number::New(info.Env(), ret);
+}
 
-// //int modbus_send_raw_request(modbus_t *ctx, uint8_t *raw_req, int raw_req_length);
-// // Integer send_raw_request(External, Array, Integer);
-// Napi::Value js_send_raw_request(const Napi::CallbackInfo& info) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
-// 	Local<Array> raw_req_arr = Local<Array>::Cast(args[1]);
-// 	int raw_req_length = info[2].As<Napi::Number>().Int32Value();
+//int modbus_send_raw_request(modbus_t *ctx, uint8_t *raw_req, int raw_req_length);
+// Integer send_raw_request(External, Array, Integer);
+Napi::Value js_send_raw_request(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	Napi::Array raw_req_arr = info[1].As<Napi::Array>();
+	int raw_req_length = info[2].As<Napi::Number>().Int32Value();
 	
-// 	uint8_t raw_req[raw_req_length];
-// 	for (int i = 0; i < raw_req_length; i++) raw_req[i] = raw_req_arr->Get(i)->Uint32Value();
+	uint8_t raw_req[raw_req_length];
+	for (int i = 0; i < raw_req_length; i++) raw_req[i] = raw_req_arr.Get(i).As<Napi::Number>().Uint32Value();
 	
-// 	int ret = modbus_send_raw_request(ctx, raw_req, raw_req_length);
+	int ret = modbus_send_raw_request(ctx, raw_req, raw_req_length);
 	
-// 	return Napi::Number::New(info.Env(), ret);
-// }
+	return Napi::Number::New(info.Env(), ret);
+}
 
-// // int modbus_receive_confirmation(modbus_t *ctx, uint8_t *rsp);
-// // Integer receive_confirmation(External, Array);
-// Napi::Value js_receive_confirmation(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
-// 	Local<Array> rsp_arr = Local<Array>::Cast(args[1]);
+// int modbus_receive_confirmation(modbus_t *ctx, uint8_t *rsp);
+// Integer receive_confirmation(External, Array);
+Napi::Value js_receive_confirmation(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	Napi::Array rsp_arr = info[1].As<Napi::Array>();
 	
-// 	uint8_t rsp[MODBUS_TCP_MAX_ADU_LENGTH];
-// 	memset(rsp, 0, MODBUS_TCP_MAX_ADU_LENGTH * sizeof(uint8_t));
+	uint8_t rsp[MODBUS_TCP_MAX_ADU_LENGTH];
+	memset(rsp, 0, MODBUS_TCP_MAX_ADU_LENGTH * sizeof(uint8_t));
 	
-// 	int ret = modbus_receive_confirmation(ctx, rsp);
+	int ret = modbus_receive_confirmation(ctx, rsp);
 	
-// 	if (ret > 0) {
-// 		for (int i = 0; i < ret; i++) rsp_arr->Set(i, Number::New(isolate, rsp[i]));
-// 	}
+	if (ret > 0) {
+		for (int i = 0; i < ret; i++) rsp_arr.Set(uint32_t(i), uint32_t(rsp[i]));
+	}
 	
-// 	return Napi::Number::New(info.Env(), ret);
-// }
+	return Napi::Number::New(info.Env(), ret);
+}
 
-// // int modbus_reply_exception(modbus_t *ctx, const uint8_t *req, unsigned int exception_code);
-// // Integer reply_exception(External, Array, Integer);
-// Napi::Value js_reply_exception(const Napi::CallbackInfo& info) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
-// 	Local<Array> req_arr = Local<Array>::Cast(args[1]);
-// 	unsigned int exception_code = info[2].As<Napi::Number>().Int32Value();
+// int modbus_reply_exception(modbus_t *ctx, const uint8_t *req, unsigned int exception_code);
+// Integer reply_exception(External, Array, Integer);
+Napi::Value js_reply_exception(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	Napi::Array req_arr = info[1].As<Napi::Array>();
+	unsigned int exception_code = info[2].As<Napi::Number>().Int32Value();
 	
-// 	int req_arr_len = req_arr->InternalFieldCount();
-// 	uint8_t req[req_arr_len];
-// 	for (int i = 0; i < req_arr_len; i++) req[i] = req_arr->Get(i)->Uint32Value();
+	int req_arr_len = req_arr.Length();
+	uint8_t req[req_arr_len];
+	for (int i = 0; i < req_arr_len; i++) req[i] = req_arr.Get(i).As<Napi::Number>().Uint32Value();
 	
-// 	int ret = modbus_reply_exception(ctx, req, exception_code);
+	int ret = modbus_reply_exception(ctx, req, exception_code);
 	
-// 	return Napi::Number::New(info.Env(), ret);
-// }
+	return Napi::Number::New(info.Env(), ret);
+}
 
-// // modbus_mapping_t *modbus_mapping_new(int nb_bits, int nb_input_bits, int nb_registers, int nb_input_registers);
-// // External mapping_new(Integer, Integer, Integer, Integer);
-// Napi::Value js_mapping_new(const Napi::CallbackInfo& info) {
-// 	int nb_bits = Local<Integer>::Cast(args[0])->Int32Value();
-// 	int nb_input_bits = info[1].As<Napi::Number>().Int32Value();
-// 	int nb_registers = info[2].As<Napi::Number>().Int32Value();
-// 	int nb_input_registers = Local<Integer>::Cast(args[3])->Int32Value();
+// modbus_mapping_t *modbus_mapping_new(int nb_bits, int nb_input_bits, int nb_registers, int nb_input_registers);
+// External mapping_new(Integer, Integer, Integer, Integer);
+Napi::Value js_mapping_new(const Napi::CallbackInfo& info) {
+	int nb_bits = info[0].As<Napi::Number>().Int32Value();
+	int nb_input_bits = info[1].As<Napi::Number>().Int32Value();
+	int nb_registers = info[2].As<Napi::Number>().Int32Value();
+	int nb_input_registers = info[3].As<Napi::Number>().Int32Value();
 	
-// 	modbus_mapping_t *map = modbus_mapping_new(nb_bits, nb_input_bits, nb_registers, nb_input_registers);
+	modbus_mapping_t *map = modbus_mapping_new(nb_bits, nb_input_bits, nb_registers, nb_input_registers);
 	
-// 	if (map == NULL) {
-// 		args.GetReturnValue().SetNull();
-// 	} else {
-// 		args.GetReturnValue().Set(TO_EXTERNAL(map));
-// 	}
-// }
+	if (map == NULL) {
+		return info.Env().Null();
+	} else {
+		return Napi::External<modbus_mapping_t>::New(info.Env(), map);
+	}
+}
 
-// // void modbus_mapping_free(modbus_mapping_t *mb_mapping);
-// // Undefined mapping_free(External);
-// Napi::Value js_mapping_free(const Napi::CallbackInfo& info) {
-// 	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[0]));
+// void modbus_mapping_free(modbus_mapping_t *mb_mapping);
+// Undefined mapping_free(External);
+Napi::Value js_mapping_free(const Napi::CallbackInfo& info) {
+	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(info[0].As<Napi::External<modbus_mapping_t>>().Data());
 	
-// 	modbus_mapping_free(map);
+	modbus_mapping_free(map);
 	
-// 	args.GetReturnValue().SetUndefined();
-// }
+	return info.Env().Undefined();
+}
 
 // // int modbus_receive(modbus_t *ctx, uint8_t *req);
 // // Integer receive(External, Array);
@@ -1009,18 +1005,18 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set(Napi::String::New(env,"read_input_bits"), Napi::Function::New(env,js_read_input_bits));
 	exports.Set(Napi::String::New(env,"read_registers"), Napi::Function::New(env,js_read_registers));
 	exports.Set(Napi::String::New(env,"read_input_registers"), Napi::Function::New(env,js_read_input_registers));
-	// exports.Set(Napi::String::New(env,"report_slave_id"), Napi::Function::New(env,js_report_slave_id));
-	// exports.Set(Napi::String::New(env,"write_bit"), Napi::Function::New(env,js_write_bit));
-	// exports.Set(Napi::String::New(env,"write_register"), Napi::Function::New(env,js_write_register));
-	// exports.Set(Napi::String::New(env,"write_bits"), Napi::Function::New(env,js_write_bits));
-	// exports.Set(Napi::String::New(env,"write_registers"), Napi::Function::New(env,js_write_registers));
-	// exports.Set(Napi::String::New(env,"write_and_read_registers"), Napi::Function::New(env,js_write_and_read_registers));
-	// exports.Set(Napi::String::New(env,"send_raw_request"), Napi::Function::New(env,js_send_raw_request));
-	// exports.Set(Napi::String::New(env,"receive_confirmation"), Napi::Function::New(env,js_receive_confirmation));
-	// exports.Set(Napi::String::New(env,"reply_exception"), Napi::Function::New(env,js_reply_exception));
+	exports.Set(Napi::String::New(env,"report_slave_id"), Napi::Function::New(env,js_report_slave_id));
+	exports.Set(Napi::String::New(env,"write_bit"), Napi::Function::New(env,js_write_bit));
+	exports.Set(Napi::String::New(env,"write_register"), Napi::Function::New(env,js_write_register));
+	exports.Set(Napi::String::New(env,"write_bits"), Napi::Function::New(env,js_write_bits));
+	exports.Set(Napi::String::New(env,"write_registers"), Napi::Function::New(env,js_write_registers));
+	exports.Set(Napi::String::New(env,"write_and_read_registers"), Napi::Function::New(env,js_write_and_read_registers));
+	exports.Set(Napi::String::New(env,"send_raw_request"), Napi::Function::New(env,js_send_raw_request));
+	exports.Set(Napi::String::New(env,"receive_confirmation"), Napi::Function::New(env,js_receive_confirmation));
+	exports.Set(Napi::String::New(env,"reply_exception"), Napi::Function::New(env,js_reply_exception));
 
-	// exports.Set(Napi::String::New(env,"mapping_new"), Napi::Function::New(env,js_mapping_new));
-	// exports.Set(Napi::String::New(env,"mapping_free"), Napi::Function::New(env,js_mapping_free));
+	exports.Set(Napi::String::New(env,"mapping_new"), Napi::Function::New(env,js_mapping_new));
+	exports.Set(Napi::String::New(env,"mapping_free"), Napi::Function::New(env,js_mapping_free));
 	// exports.Set(Napi::String::New(env,"receive"), Napi::Function::New(env,js_receive));
 	// exports.Set(Napi::String::New(env,"reply"), Napi::Function::New(env,js_reply));
 
