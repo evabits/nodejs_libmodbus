@@ -22,14 +22,12 @@ Napi::Value js_new_rtu(const Napi::CallbackInfo& info) {
 		Napi::Error::New(env,"Wrong number of arguments").ThrowAsJavaScriptException();
 		return env.Null();
 	}
-	Napi::String device = info[0].As<Napi::String>();
+	string dev = info[0].As<Napi::String>();
 	int baud = info[1].As<Napi::Number>().Int32Value();
-	Napi::String parity_str = info[2].As<Napi::String>();
+	string par = info[2].As<Napi::String>();
 	int data_bit = info[3].As<Napi::Number>().Int32Value();
 	int stop_bit = info[4].As<Napi::Number>().Int32Value();
 	
-	string dev(device);
-	string par(parity_str);
 	char parity = par.c_str()[0];
 	
 	modbus_t *ctx = modbus_new_rtu(dev.c_str(), baud, parity, data_bit, stop_bit);
@@ -37,96 +35,100 @@ Napi::Value js_new_rtu(const Napi::CallbackInfo& info) {
 	if (ctx == NULL) {
 		return env.Null();
 	} else {
-		return Napi::External<modbus_t*>::New(env, &ctx);
+		return Napi::External<modbus_t>::New(env, ctx);
 	}
 }
 
 // int modbus_rtu_get_serial_mode(modbus_t *ctx);
 // Integer rtu_get_serial_mode(External);
 Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
-	modbus_t *ctx = static_cast<modbus_t *>(*info[0].As<Napi::External<modbus_t *>>().Data());
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	
 	int ret = modbus_rtu_get_serial_mode(ctx);
 	
 	return Napi::Value::From(info.Env(), ret);
 }
 
-// // int modbus_rtu_set_serial_mode(modbus_t *ctx, int mode);
-// // Integer rtu_set_serial_mode(External, Integer);
-// void js_rtu_set_serial_mode(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int mode = Local<Integer>::Cast(args[1])->Int32Value();
-	
-// 	int ret = modbus_rtu_set_serial_mode(ctx, mode);
-	
-// 	args.GetReturnValue().Set(ret);
-// }
+// int modbus_rtu_set_serial_mode(modbus_t *ctx, int mode);
+// Integer rtu_set_serial_mode(External, Integer);
+Napi::Value js_rtu_set_serial_mode(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	int mode = info[1].As<Napi::Number>().Int32Value();
 
-// // int modbus_rtu_get_rts(modbus_t *ctx);
-// void js_rtu_get_rts(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
 	
-// 	int ret = modbus_rtu_get_rts(ctx);
+	int ret = modbus_rtu_set_serial_mode(ctx, mode);
 	
-// 	args.GetReturnValue().Set(ret);
-// }
+	Napi::Number num = Napi::Number::New(info.Env(), ret);
+	return num;
+}
 
-// // int modbus_rtu_set_rts(modbus_t *ctx, int mode)
-// void js_rtu_set_rts(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int mode = Local<Integer>::Cast(args[1])->Int32Value();
+// int modbus_rtu_get_rts(modbus_t *ctx);
+Napi::Value js_rtu_get_rts(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	
-// 	int ret = modbus_rtu_set_rts(ctx, mode);
+	int ret = modbus_rtu_get_rts(ctx);
 	
-// 	args.GetReturnValue().Set(ret);
-// }
+	Napi::Number num = Napi::Number::New(info.Env(), ret);
+	return num;
+}
 
-// // modbus_t *modbus_new_tcp(const char *ip, int port);
-// // External new_tcp(String, Integer);
-// void js_new_tcp(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	String::Utf8Value ip(args[0]);
-// 	int port = Local<Integer>::Cast(args[1])->Int32Value();
-	
-// 	modbus_t *ctx = modbus_new_tcp(*ip, port);
-	
-// 	if (ctx == NULL) {
-// 		args.GetReturnValue().SetNull();
-// 	} else {
-// 		args.GetReturnValue().Set(TO_EXTERNAL(ctx));
-// 	}
-// }
+// int modbus_rtu_set_rts(modbus_t *ctx, int mode)
+Napi::Value js_rtu_set_rts(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	int mode = info[1].As<Napi::Number>().Int32Value();
 
-// // modbus_t *modbus_new_tcp_pi(const char *node, const char *service);
-// // External new_tcp_pi(String, String);
-// void js_new_tcp_pi(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	String::Utf8Value node(args[0]);
-// 	String::Utf8Value service(args[1]);
+	int ret = modbus_rtu_set_rts(ctx, mode);
 	
-// 	modbus_t *ctx = modbus_new_tcp_pi(*node, *service);
-	
-// 	if (ctx == NULL) {
-// 		args.GetReturnValue().SetNull();
-// 	} else {
-// 		args.GetReturnValue().Set(TO_EXTERNAL(ctx));
-// 	}
-// }
+	Napi::Number num = Napi::Number::New(info.Env(), ret);
+	return num;
+}
 
-// // void modbus_free(modbus_t *ctx);
-// // Undefined free(External);
-// void js_free(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// modbus_t *modbus_new_tcp(const char *ip, int port);
+// External new_tcp(String, Integer);
+Napi::Value js_new_tcp(const Napi::CallbackInfo& info) {
+	string ip = info[0].As<Napi::String>();
+	int port = info[1].As<Napi::Number>().Int32Value();
 	
-// 	modbus_free(ctx);
+	modbus_t *ctx = modbus_new_tcp(ip.c_str(), port);
 	
-// 	args.GetReturnValue().SetUndefined();
-// }
+	if (ctx == NULL) {
+		return info.Env().Null();
+	} else {
+		return Napi::External<modbus_t>::New(info.Env(), ctx);
+	}
+}
+
+// modbus_t *modbus_new_tcp_pi(const char *node, const char *service);
+// External new_tcp_pi(String, String);
+Napi::Value js_new_tcp_pi(const Napi::CallbackInfo& info) {
+	string node = info[0].As<Napi::String>();
+	string service = info[1].As<Napi::String>();
+	
+	modbus_t *ctx = modbus_new_tcp_pi(node.c_str(), service.c_str());
+	
+	if (ctx == NULL) {
+		return info.Env().Null();
+	} else {
+		return Napi::External<modbus_t>::New(info.Env(), ctx);
+	}
+}
+
+// void modbus_free(modbus_t *ctx);
+// Undefined free(External);
+Napi::Value js_free(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	
+	modbus_free(ctx);
+	
+	return info.Env().Undefined();
+}
 
 // // void modbus_get_byte_timeout(modbus_t *ctx, struct timeval *timeout);
 // // Undefined get_byte_timeout(External, Object);
-// void js_get_byte_timeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valueget_byte_timeout(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Object> timeout_obj = Local<Object>::Cast(args[1]);
 	
 
@@ -147,10 +149,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // void modbus_set_byte_timeout(modbus_t *ctx, struct timeval *timeout);
 // // Undefined set_byte_timeout(External, Object);
-// void js_set_byte_timeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valueset_byte_timeout(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Object> timeout_obj = Local<Object>::Cast(args[1]);
 	
 // 	struct timeval timeout;
@@ -164,9 +166,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // void modbus_set_debug(modbus_t *ctx, int boolean);
 // // Undefined set_debug(External, Integer);
-// void js_set_debug(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int boolean = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valueset_debug(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int boolean = info[1].As<Napi::Number>().Int32Value();
 	
 // 	modbus_set_debug(ctx, boolean);
 	
@@ -175,9 +177,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_set_error_recovery(modbus_t *ctx, modbus_error_recovery_mode error_recovery);
 // // Integer set_error_recovery(External, Integer);
-// void js_set_error_recovery(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int error_recovery = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valueset_error_recovery(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int error_recovery = info[1].As<Napi::Number>().Int32Value();
 	
 // 	int ret = modbus_set_error_recovery(ctx, static_cast<modbus_error_recovery_mode>(error_recovery));
 	
@@ -186,8 +188,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_get_header_length(modbus_t *ctx);
 // // Integer get_header_length(External);
-// void js_get_header_length(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// Napi::Valueget_header_length(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	
 // 	int ret = modbus_get_header_length(ctx);
 	
@@ -196,10 +198,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // void modbus_get_response_timeout(modbus_t *ctx, struct timeval *timeout);
 // // Undefined get_response_timeout(External, Object);
-// void js_get_response_timeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valueget_response_timeout(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Object> timeout_obj = Local<Object>::Cast(args[1]);
 	
 // 	uint32_t sec = 0;
@@ -219,10 +221,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // void modbus_set_response_timeout(modbus_t *ctx, struct timeval *timeout);
 // // Undefined set_response_timeout(External, Object);
-// void js_set_response_timeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valueset_response_timeout(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Object> timeout_obj = Local<Object>::Cast(args[1]);
 	
 // 	struct timeval timeout;
@@ -235,9 +237,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_set_slave(modbus_t *ctx, int slave);
 // // Integer set_slave(External, Integer);
-// void js_set_slave(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int slave = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valueset_slave(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int slave = info[1].As<Napi::Number>().Int32Value();
 	
 // 	int ret = modbus_set_slave(ctx, slave);
 	
@@ -246,9 +248,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // void modbus_set_socket(modbus_t *ctx, int socket);
 // // Undefined set_socket(External, Integer);
-// void js_set_socket(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int socket = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valueset_socket(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int socket = info[1].As<Napi::Number>().Int32Value();
 	
 // 	modbus_set_socket(ctx, socket);
 	
@@ -257,8 +259,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_get_socket(modbus_t *ctx);
 // // Integer get_socket(External);
-// void js_get_socket(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// Napi::Valueget_socket(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	
 // 	int ret = modbus_get_socket(ctx);
 	
@@ -274,8 +276,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_connect(modbus_t *ctx);
 // // Integer connect(External);
-// void js_connect(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// Napi::Valueconnect(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	
 // 	int ret = modbus_connect(ctx);
 	
@@ -284,7 +286,7 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // void modbus_close(modbus_t *ctx);
 // // Undefined close(External);
-// void js_close(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valueclose(const Napi::CallbackInfo& info) {
 
 // 	args.GetReturnValue().Set(ret);
 // }
@@ -298,8 +300,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_connect(modbus_t *ctx);
 // // Integer connect(External);
-// void js_connect(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// Napi::Valueconnect(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	
 // 	int ret = modbus_connect(ctx);
 	
@@ -314,11 +316,11 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_read_input_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest);
 // // Integer read_input_registers(External, Integer, Integer, Array);
-// void js_read_input_registers(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valueread_input_registers(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int addr = Local<Integer>::Cast(args[1])->Int32Value();
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int addr = info[1].As<Napi::Number>().Int32Value();
 // 	int nb = Local<Integer>::Cast(args[2])->Int32Value();
 // 	Local<Array> dest_arr = Local<Array>::Cast(args[3]);
 	
@@ -332,10 +334,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_report_slave_id(modbus_t *ctx, int max_dest, uint8_t *dest);
 // // Integer report_slave_id(External, Array, Integer);
-// void js_report_slave_id(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valuereport_slave_id(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Array> dest_obj = Local<Array>::Cast(args[1]);
 // 	int max_dest = Local<Integer>::Cast(args[2])->Int32Value();
 	
@@ -355,9 +357,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_write_bit(modbus_t *ctx, int addr, int status);
 // // Integer write_bit(External, Integer, Integer);
-// void js_write_bit(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int addr = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuewrite_bit(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int addr = info[1].As<Napi::Number>().Int32Value();
 // 	int status = Local<Integer>::Cast(args[2])->Int32Value();
 	
 // 	int ret = modbus_write_bit(ctx, addr, status);
@@ -367,9 +369,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_write_register(modbus_t *ctx, int addr, int value);
 // // Integer write_register(External, Integer, Integer);
-// void js_write_register(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int addr = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuewrite_register(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int addr = info[1].As<Napi::Number>().Int32Value();
 // 	int value = Local<Integer>::Cast(args[2])->Int32Value();
 	
 // 	int ret = modbus_write_register(ctx, addr, value);
@@ -379,9 +381,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_write_bits(modbus_t *ctx, int addr, int nb, const uint8_t *src);
 // // Integer write_bits(External, Integer, Integer, Array);
-// void js_write_bits(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int addr = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuewrite_bits(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int addr = info[1].As<Napi::Number>().Int32Value();
 // 	int nb = Local<Integer>::Cast(args[2])->Int32Value();
 // 	Local<Array> src_arr = Local<Array>::Cast(args[3]);
 	
@@ -395,9 +397,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *src);
 // // Integer write_registers(External, Integer, Integer, Array);
-// void js_write_registers(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int addr = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuewrite_registers(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int addr = info[1].As<Napi::Number>().Int32Value();
 // 	int nb = Local<Integer>::Cast(args[2])->Int32Value();
 // 	Local<Array> src_arr = Local<Array>::Cast(args[3]);
 	
@@ -411,11 +413,11 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_write_and_read_registers(modbus_t *ctx, int write_addr, int write_nb, const uint16_t *src, int read_addr, int read_nb, const uint16_t *dest);
 // // Integer write_and_read_registers(External, Integer, Integer, Array, Integer, Integer, Array);
-// void js_write_and_read_registers(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valuewrite_and_read_registers(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int write_addr = Local<Integer>::Cast(args[1])->Int32Value();
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int write_addr = info[1].As<Napi::Number>().Int32Value();
 // 	int write_nb = Local<Integer>::Cast(args[2])->Int32Value();
 // 	Local<Array> src_arr = Local<Array>::Cast(args[3]);
 // 	int read_addr = Local<Integer>::Cast(args[4])->Int32Value();
@@ -438,8 +440,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // //int modbus_send_raw_request(modbus_t *ctx, uint8_t *raw_req, int raw_req_length);
 // // Integer send_raw_request(External, Array, Integer);
-// void js_send_raw_request(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// Napi::Valuesend_raw_request(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Array> raw_req_arr = Local<Array>::Cast(args[1]);
 // 	int raw_req_length = Local<Integer>::Cast(args[2])->Int32Value();
 	
@@ -453,10 +455,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_receive_confirmation(modbus_t *ctx, uint8_t *rsp);
 // // Integer receive_confirmation(External, Array);
-// void js_receive_confirmation(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valuereceive_confirmation(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Array> rsp_arr = Local<Array>::Cast(args[1]);
 	
 // 	uint8_t rsp[MODBUS_TCP_MAX_ADU_LENGTH];
@@ -473,8 +475,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_reply_exception(modbus_t *ctx, const uint8_t *req, unsigned int exception_code);
 // // Integer reply_exception(External, Array, Integer);
-// void js_reply_exception(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// Napi::Valuereply_exception(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Array> req_arr = Local<Array>::Cast(args[1]);
 // 	unsigned int exception_code = Local<Integer>::Cast(args[2])->Int32Value();
 	
@@ -489,9 +491,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // modbus_mapping_t *modbus_mapping_new(int nb_bits, int nb_input_bits, int nb_registers, int nb_input_registers);
 // // External mapping_new(Integer, Integer, Integer, Integer);
-// void js_mapping_new(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valuemapping_new(const Napi::CallbackInfo& info) {
 // 	int nb_bits = Local<Integer>::Cast(args[0])->Int32Value();
-// 	int nb_input_bits = Local<Integer>::Cast(args[1])->Int32Value();
+// 	int nb_input_bits = info[1].As<Napi::Number>().Int32Value();
 // 	int nb_registers = Local<Integer>::Cast(args[2])->Int32Value();
 // 	int nb_input_registers = Local<Integer>::Cast(args[3])->Int32Value();
 	
@@ -506,7 +508,7 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // void modbus_mapping_free(modbus_mapping_t *mb_mapping);
 // // Undefined mapping_free(External);
-// void js_mapping_free(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valuemapping_free(const Napi::CallbackInfo& info) {
 // 	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[0]));
 	
 // 	modbus_mapping_free(map);
@@ -516,10 +518,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_receive(modbus_t *ctx, uint8_t *req);
 // // Integer receive(External, Array);
-// void js_receive(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valuereceive(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Array> req_arr = Local<Array>::Cast(args[1]);
 	
 // 	uint8_t req[MODBUS_TCP_MAX_ADU_LENGTH];
@@ -536,8 +538,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_reply(modbus_t *ctx, const uint8_t *req, int req_length, modbus_mapping_t *mb_mapping);
 // // Integer reply(External, Array, Integer, External);
-// void js_reply(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// Napi::Valuereply(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Array> req_arr = Local<Array>::Cast(args[1]);
 // 	int req_length = Local<Integer>::Cast(args[2])->Int32Value();
 // 	modbus_mapping_t *mb_mapping = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[3]));
@@ -552,7 +554,7 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // const char *modbus_strerror(*int errnum);
 // // String strerror();
-// void js_strerror(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// Napi::Valuestrerror(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
 // 	const char *ret = modbus_strerror(errno);
@@ -562,9 +564,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_tcp_listen(modbus_t *ctx, int nb_connection);
 // // Integer tcp_listen(External, Integer);
-// void js_tcp_listen(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int nb_connection = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuetcp_listen(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int nb_connection = info[1].As<Napi::Number>().Int32Value();
 	
 // 	int ret = modbus_tcp_listen(ctx, nb_connection);
 	
@@ -573,9 +575,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_tcp_accept(modbus_t *ctx, int *socket);
 // // Integer tcp_accept(External, Integer);
-// void js_tcp_accept(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int socket = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuetcp_accept(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int socket = info[1].As<Napi::Number>().Int32Value();
 	
 // 	int ret = modbus_tcp_accept(ctx, &socket);
 	
@@ -584,9 +586,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_tcp_pi_listen(modbus_t *ctx, int nb_connection);
 // // Integer tcp_pi_listen(External, Integer);
-// void js_tcp_pi_listen(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int nb_connection = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuetcp_pi_listen(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int nb_connection = info[1].As<Napi::Number>().Int32Value();
 	
 // 	int ret = modbus_tcp_pi_listen(ctx, nb_connection);
 	
@@ -595,9 +597,9 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // int modbus_tcp_pi_accept(modbus_t *ctx, int *socket);
 // // Integer tcp_pi_accept(External, Integer);
-// void js_tcp_pi_accept(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int socket = Local<Integer>::Cast(args[1])->Int32Value();
+// Napi::Valuetcp_pi_accept(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int socket = info[1].As<Napi::Number>().Int32Value();
 	
 // 	int ret = modbus_tcp_pi_accept(ctx, &socket);
 	
@@ -606,7 +608,7 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // convert modbus_mapping_t* to json object
 // // Undefined map_to_json(External, Object);
-// void map_to_json(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// void map_to_json(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
 // 	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[0]));
@@ -647,7 +649,7 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // convert json object to modbus_mapping_t*
 // // Undefined json_to_map(Object, External);
-// void json_to_map(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// void json_to_map(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
 // 	Local<Object> jso = Local<Object>::Cast(args[0]);
@@ -711,11 +713,11 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // Undefined tcp_accept_async(External, Integer, Function);
 // // callback function - Function(Integer);
-// void tcp_accept_async(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// void tcp_accept_async(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
-// 	int socket = Local<Integer>::Cast(args[1])->Int32Value();
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+// 	int socket = info[1].As<Napi::Number>().Int32Value();
 // 	Local<Function> cb = Local<Function>::Cast(args[2]);
 	
 // 	tcp_accept_t* request = new tcp_accept_t;
@@ -771,10 +773,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // Undefined receive_async(External, Function);
 // // callback function - Function(Array, Integer);
-// void receive_async(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// void receive_async(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Function> cb = Local<Function>::Cast(args[1]);
 	
 // 	uint8_t *mbreq = new uint8_t[MODBUS_TCP_MAX_ADU_LENGTH];
@@ -823,10 +825,10 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // Undefined connect_async(External, Function);
 // // callback function - Function(Integer);
-// void connect_async(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// void connect_async(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 // 	Local<Function> cb = Local<Function>::Cast(args[1]);
 	
 // 	connect_t* request = new connect_t;
@@ -844,8 +846,8 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 
 // // закрыть из треда
 // // Undefined close(External);
-// void close_mt(const v8::FunctionCallbackInfo<v8::Value>& args) {
-// 	modbus_t *ctx = static_cast<modbus_t *>(FROM_EXTERNAL(args[0]));
+// void close_mt(const Napi::CallbackInfo& info) {
+// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	
 // 	modbus_close(ctx);
 	
@@ -853,7 +855,7 @@ Napi::Value js_rtu_get_serial_mode(const Napi::CallbackInfo& info) {
 // }
 
 // // Decode HEX value to a float or double
-// void hex_decode(const v8::FunctionCallbackInfo<v8::Value>& args) {
+// void hex_decode(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
 // 	int nArgs = args.Length();
@@ -953,9 +955,9 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	// Functions
 	exports.Set(Napi::String::New(env, "new_rtu"), Napi::Function::New(env,js_new_rtu));
 	exports.Set(Napi::String::New(env, "rtu_get_serial_mode"), Napi::Function::New(env,js_rtu_get_serial_mode));
-	// Set(target, New<String>("rtu_set_serial_mode").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_rtu_set_serial_mode).ToLocalChecked());
-	// Set(target, New<String>("rtu_get_rts").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_rtu_get_rts).ToLocalChecked());
-	// Set(target, New<String>("rtu_set_rts").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_rtu_set_rts).ToLocalChecked());
+	exports.Set(Napi::String::New(env, "rtu_set_serial_mode"), Napi::Function::New(env,js_rtu_set_serial_mode));
+	exports.Set(Napi::String::New(env, "rtu_get_rts"), Napi::Function::New(env,js_rtu_get_rts));
+	exports.Set(Napi::String::New(env, "rtu_set_rts"), Napi::Function::New(env,js_rtu_set_rts));
 
 	// Set(target, New<String>("new_tcp").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_new_tcp).ToLocalChecked());
 	// Set(target, New<String>("new_tcp_pi").ToLocalChecked(), GetFunction(New<FunctionTemplate>(js_new_tcp_pi).ToLocalChecked());
