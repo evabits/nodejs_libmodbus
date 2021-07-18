@@ -1013,15 +1013,15 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 
 	exports.Set(Napi::String::New(env,"mapping_new"), Napi::Function::New(env,js_mapping_new));
 	exports.Set(Napi::String::New(env,"mapping_free"), Napi::Function::New(env,js_mapping_free));
-	// exports.Set(Napi::String::New(env,"receive"), Napi::Function::New(env,js_receive));
-	// exports.Set(Napi::String::New(env,"reply"), Napi::Function::New(env,js_reply));
+	exports.Set(Napi::String::New(env,"receive"), Napi::Function::New(env,js_receive));
+	exports.Set(Napi::String::New(env,"reply"), Napi::Function::New(env,js_reply));
 
-	// exports.Set(Napi::String::New(env,"strerror"), Napi::Function::New(env,js_strerror));
+	exports.Set(Napi::String::New(env,"strerror"), Napi::Function::New(env,js_strerror));
 
-	// exports.Set(Napi::String::New(env,"tcp_listen"), Napi::Function::New(env,js_tcp_listen));
-	// exports.Set(Napi::String::New(env,"tcp_accept"), Napi::Function::New(env,js_tcp_accept));
-	// exports.Set(Napi::String::New(env,"tcp_pi_listen"), Napi::Function::New(env,js_tcp_pi_listen));
-	// exports.Set(Napi::String::New(env,"tcp_pi_accept"), Napi::Function::New(env,js_tcp_pi_accept));
+	exports.Set(Napi::String::New(env,"tcp_listen"), Napi::Function::New(env,js_tcp_listen));
+	exports.Set(Napi::String::New(env,"tcp_accept"), Napi::Function::New(env,js_tcp_accept));
+	exports.Set(Napi::String::New(env,"tcp_pi_listen"), Napi::Function::New(env,js_tcp_pi_listen));
+	exports.Set(Napi::String::New(env,"tcp_pi_accept"), Napi::Function::New(env,js_tcp_pi_accept));
 	
 	// // my functions
 	// exports.Set(Napi::String::New(env,"map_to_json"), Napi::Function::New(env,map_to_json));
