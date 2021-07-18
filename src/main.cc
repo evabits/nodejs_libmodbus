@@ -624,82 +624,78 @@ Napi::Value js_tcp_pi_accept(const Napi::CallbackInfo& info) {
 	return Napi::Number::New(info.Env(), ret);
 }
 
-// // convert modbus_mapping_t* to json object
-// // Undefined map_to_json(External, Object);
-// void map_to_json(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[0]));
-// 	Local<Object> jso = Local<Object>::Cast(args[1]);
+// convert modbus_mapping_t* to json object
+// Undefined map_to_json(External, Object);
+Napi::Value map_to_json(const Napi::CallbackInfo& info) {
+	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(info[0].As<Napi::External<modbus_mapping_t>>().Data());
+	Napi::Object jso = info[1].As<Napi::Object>();
 	
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_bits"), Integer::New(isolate, map->nb_bits));
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_input_bits"), Integer::New(isolate, map->nb_input_bits));
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_input_registers"), Integer::New(isolate, map->nb_input_registers));
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_registers"), Integer::New(isolate, map->nb_registers));
+	jso.Set("nb_bits", uint32_t(map->nb_bits));
+	jso.Set("nb_input_bits", uint32_t(map->nb_input_bits));
+	jso.Set("nb_input_registers", uint32_t(map->nb_input_registers));
+	jso.Set("nb_registers", uint32_t(map->nb_registers));
 	
-// 	Local<Array> tab_bits = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_bits; i++) {
-// 		tab_bits->Set(i, Integer::New(isolate, map->tab_bits[i]));
-// 	}
+	Napi::Array tab_bits = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_bits; i++) {
+		tab_bits.Set(uint32_t(i), uint32_t(map->tab_bits[i]));
+	}
 	
-// 	Local<Array> tab_input_bits = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_input_bits; i++) {
-// 		tab_input_bits->Set(i, Integer::New(isolate, map->tab_input_bits[i]));
-// 	}
+	Napi::Array tab_input_bits = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_input_bits; i++) {
+		tab_input_bits.Set(uint32_t(i), uint32_t(map->tab_input_bits[i]));
+	}
 	
-// 	Local<Array> tab_input_registers = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_input_registers; i++) {
-// 		tab_input_registers->Set(i, Integer::New(isolate, map->tab_input_registers[i]));
-// 	}
+	Napi::Array tab_input_registers = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_input_registers; i++) {
+		tab_input_registers.Set(uint32_t(i), uint32_t(map->tab_input_registers[i]));
+	}
 	
-// 	Local<Array> tab_registers = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_registers; i++) {
-// 		tab_registers->Set(i, Integer::New(isolate, map->tab_registers[i]));
-// 	}
+	Napi::Array tab_registers = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_registers; i++) {
+		tab_registers.Set(uint32_t(i), uint32_t(map->tab_registers[i]));
+	}
 	
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_bits"), tab_bits);
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_input_bits"), tab_input_bits);
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_input_registers"), tab_input_registers);
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_registers"), tab_registers);
+	jso.Set("tab_bits", tab_bits);
+	jso.Set("tab_input_bits", tab_input_bits);
+	jso.Set("tab_input_registers", tab_input_registers);
+	jso.Set("tab_registers", tab_registers);
 	
-// 	args.GetReturnValue().SetUndefined();
-// }
+	return info.Env().Undefined();
+}
 
-// // convert json object to modbus_mapping_t*
-// // Undefined json_to_map(Object, External);
-// void json_to_map(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	Local<Object> jso = Local<Object>::Cast(args[0]);
-// 	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[1]));
+// convert json object to modbus_mapping_t*
+// Undefined json_to_map(Object, External);
+Napi::Value json_to_map(const Napi::CallbackInfo& info) {
+	Napi::Object jso = info[0].As<Napi::Object>();
+	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(info[1].As<Napi::External<modbus_mapping_t>>().Data());
 	
-// 	map->nb_bits = jso->Get(String::NewFromUtf8(isolate, "nb_bits"))->Int32Value();
-// 	map->nb_input_bits = jso->Get(String::NewFromUtf8(isolate, "nb_input_bits"))->Int32Value();
-// 	map->nb_input_registers = jso->Get(String::NewFromUtf8(isolate, "nb_input_registers"))->Int32Value();
-// 	map->nb_registers = jso->Get(String::NewFromUtf8(isolate, "nb_registers"))->Int32Value();
+	map->nb_bits = jso.Get("nb_bits").As<Napi::Number>().Int32Value();
+	map->nb_input_bits = jso.Get("nb_input_bits").As<Napi::Number>().Int32Value();
+	map->nb_input_registers = jso.Get("nb_input_registers").As<Napi::Number>().Int32Value();
+	map->nb_registers = jso.Get("nb_registers").As<Napi::Number>().Int32Value();
 	
-// 	Local<Array> tab_bits = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_bits")));
-// 	for (int i = 0; i < map->nb_bits; i++) {
-// 		map->tab_bits[i] = tab_bits->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_bits = jso.Get("tab_bits").As<Napi::Array>();
+	for (int i = 0; i < map->nb_bits; i++) {
+		map->tab_bits[i] = tab_bits.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	Local<Array> tab_input_bits = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_input_bits")));
-// 	for (int i = 0; i < map->nb_input_bits; i++) {
-// 		map->tab_input_bits[i] = tab_input_bits->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_input_bits = jso.Get("tab_input_bits").As<Napi::Array>();
+	for (int i = 0; i < map->nb_input_bits; i++) {
+		map->tab_input_bits[i] = tab_input_bits.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	Local<Array> tab_input_registers = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_input_registers")));
-// 	for (int i = 0; i < map->nb_input_registers; i++) {
-// 		map->tab_input_registers[i] = tab_input_registers->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_input_registers = jso.Get("tab_input_registers").As<Napi::Array>();
+	for (int i = 0; i < map->nb_input_registers; i++) {
+		map->tab_input_registers[i] = tab_input_registers.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	Local<Array> tab_registers = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_registers")));
-// 	for (int i = 0; i < map->nb_registers; i++) {
-// 		map->tab_registers[i] = tab_registers->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_registers = jso.Get("tab_registers").As<Napi::Array>();
+	for (int i = 0; i < map->nb_registers; i++) {
+		map->tab_registers[i] = tab_registers.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	args.GetReturnValue().SetUndefined();
-// }
+	return info.Env().Undefined();
+}
 
 // struct tcp_accept_t {
 //     modbus_t *ctx;
