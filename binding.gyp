@@ -13,7 +13,7 @@
             ],
             "defines": ['NAPI_DISABLE_CPP_EXCEPTIONS'],
             "conditions": [
-                ["libmodbus == 'internal'", {
+                ["libmodbus != 'internal'", {
                     "include_dirs": [ "<(libmodbus_include)" ],
                     "libraries": [
                     "-l<(libmodbus_libname)"
