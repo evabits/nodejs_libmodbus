@@ -835,26 +835,37 @@ Napi::Value json_to_map(const Napi::CallbackInfo& info) {
 //     delete request;
 // }
 
-// // Undefined connect_async(External, Function);
-// // callback function - Function(Integer);
-// void connect_async(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
-// 	Local<Function> cb = Local<Function>::Cast(args[1]);
-	
-// 	connect_t* request = new connect_t;
-// 	request->ctx = ctx;
-// 	request->cb.Reset(isolate, cb);
-// 	request->ret = 0;
-	
-// 	uv_work_t* req = new uv_work_t();
-// 	req->data = request;
-	
-// 	uv_queue_work(uv_default_loop(), req, connect_w, connect_a);
-	
-// 	args.GetReturnValue().SetUndefined();
-// }
+class ConnectWorker : public Napi::AsyncWorker {
+    public:
+        ConnectWorker(Napi::Function& callback, modbus_t * ctx)
+        : AsyncWorker(callback), ctx(ctx){}
+
+        ~ConnectWorker() {}
+    // This code will be executed on the worker thread
+    void Execute() override {
+        // Need to simulate cpu heavy task
+		modbus_connect(ctx);
+    }
+
+    void OnOK() override {
+        Napi::HandleScope scope(Env());
+        Callback().Call({Env().Null(), Napi::External<modbus_t>::New(Env(), ctx)});
+    }
+
+    private:
+        modbus_t *ctx;
+};
+
+// Undefined connect_async(External, Function);
+// callback function - Function(Integer);
+Napi::Value connect_async(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	Napi::Function cb = info[1].As<Napi::Function>();
+		
+	ConnectWorker* wk = new ConnectWorker(cb, ctx);
+    wk->Queue();
+    return info.Env().Undefined();
+}
 
 // // закрыть из треда
 // // Undefined close(External);
@@ -1023,7 +1034,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 
 	// exports.Set(Napi::String::New(env,"tcp_accept_async"), Napi::Function::New(env,tcp_accept_async));
 	// exports.Set(Napi::String::New(env,"receive_async"), Napi::Function::New(env,receive_async));
-	// exports.Set(Napi::String::New(env,"connect_async"), Napi::Function::New(env,connect_async));
+	exports.Set(Napi::String::New(env,"connect_async"), Napi::Function::New(env,connect_async));
 	// exports.Set(Napi::String::New(env,"close_mt"), Napi::Function::New(env,close_mt));
 
 	// // HEX Decoding stuff
