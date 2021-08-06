@@ -11,6 +11,8 @@
             "include_dirs" : [
                 "<!@(node -p \"require('node-addon-api').include\")"
             ],
+            # 'defines': [ 'DEBUG', '_DEBUG' ],
+            # 'cflags': [ '-g', '-O0' ],
             "defines": ['NAPI_DISABLE_CPP_EXCEPTIONS'],
             "conditions": [
                 ["libmodbus == 'internal'", {

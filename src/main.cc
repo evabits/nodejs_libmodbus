@@ -970,6 +970,8 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set(Napi::String::New(env,"MODBUS_MAX_WRITE_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_WRITE_REGISTERS));
 	exports.Set(Napi::String::New(env,"MODBUS_MAX_WR_WRITE_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_WR_WRITE_REGISTERS));
 
+	exports.Set(Napi::String::New(env,"MODBUS_RTU_RTS_NONE"), Napi::Number::New(env,MODBUS_RTU_RTS_NONE));
+
 	exports.Set(Napi::String::New(env,"MODBUS_ENOBASE"), Napi::Number::New(env,MODBUS_ENOBASE));
 
 	exports.Set(Napi::String::New(env,"MODBUS_EXCEPTION_ILLEGAL_FUNCTION"), Napi::Number::New(env,MODBUS_EXCEPTION_ILLEGAL_FUNCTION));
