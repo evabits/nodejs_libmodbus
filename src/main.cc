@@ -783,8 +783,37 @@ Napi::Value json_to_map(const Napi::CallbackInfo& info) {
 //     delete request;
 // }
 
-// // Undefined receive_async(External, Function);
-// // callback function - Function(Array, Integer);
+class ReceiveWorker : public Napi::AsyncWorker {
+    public:
+        ReceiveWorker(Napi::Function& callback, modbus_t * ctx)
+        : AsyncWorker(callback), ctx(ctx){}
+
+        ~ReceiveWorker() {}
+    // This code will be executed on the worker thread
+    void Execute() override {
+        // Need to simulate cpu heavy task
+		len = modbus_receive(ctx, recv_buffer);
+		req_arr = Napi::Array();
+		if (len > 0) {
+			for (int i = 0; i < len; i++) req_arr.Set(uint32_t(i), uint32_t(recv_buffer[i]));
+		}
+    }
+
+    void OnOK() override {
+        Napi::HandleScope scope(Env());
+        Callback().Call({Env().Null(), Napi::External<modbus_t>::New(Env(), ctx), Napi::Number::New(Env(),len), req_arr});
+    }
+
+    private:
+        modbus_t *ctx;
+		uint8_t recv_buffer[8192];
+		uint16_t len;
+		Napi::Array req_arr;
+};
+
+
+// Undefined receive_async(External, Function);
+// callback function - Function(Array, Integer);
 // void receive_async(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
@@ -807,6 +836,15 @@ Napi::Value json_to_map(const Napi::CallbackInfo& info) {
 	
 // 	args.GetReturnValue().SetUndefined();
 // }
+
+Napi::Value receive_async(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	Napi::Function cb = info[1].As<Napi::Function>();
+		
+	ReceiveWorker* wk = new ReceiveWorker(cb, ctx);
+    wk->Queue();
+    return info.Env().Undefined();
+}
 
 // struct connect_t {
 //     modbus_t *ctx;
@@ -844,16 +882,17 @@ class ConnectWorker : public Napi::AsyncWorker {
     // This code will be executed on the worker thread
     void Execute() override {
         // Need to simulate cpu heavy task
-		modbus_connect(ctx);
+		ret = modbus_connect(ctx);
     }
 
     void OnOK() override {
         Napi::HandleScope scope(Env());
-        Callback().Call({Env().Null(), Napi::External<modbus_t>::New(Env(), ctx)});
+        Callback().Call({Env().Null(), Napi::Number::New(Env(),ret)});
     }
 
     private:
         modbus_t *ctx;
+		int ret;
 };
 
 // Undefined connect_async(External, Function);
@@ -1033,7 +1072,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set(Napi::String::New(env,"json_to_map"), Napi::Function::New(env,json_to_map));
 
 	// exports.Set(Napi::String::New(env,"tcp_accept_async"), Napi::Function::New(env,tcp_accept_async));
-	// exports.Set(Napi::String::New(env,"receive_async"), Napi::Function::New(env,receive_async));
+	exports.Set(Napi::String::New(env,"receive_async"), Napi::Function::New(env,receive_async));
 	exports.Set(Napi::String::New(env,"connect_async"), Napi::Function::New(env,connect_async));
 	// exports.Set(Napi::String::New(env,"close_mt"), Napi::Function::New(env,close_mt));
 
