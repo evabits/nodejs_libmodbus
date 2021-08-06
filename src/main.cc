@@ -700,7 +700,7 @@ Napi::Value json_to_map(const Napi::CallbackInfo& info) {
 // struct tcp_accept_t {
 //     modbus_t *ctx;
 //     int socket;
-//     Persistent<Function> cb;
+//     Napi::FunctionReference cb;
 //     int ret;
 // };
 
@@ -710,8 +710,6 @@ Napi::Value json_to_map(const Napi::CallbackInfo& info) {
 // }
 
 // void tcp_accept_a(uv_work_t* req, int arg) {
-//     Isolate* isolate = v8::Isolate::GetCurrent();
-//     HandleScope scope(isolate);
 //     tcp_accept_t* request = (tcp_accept_t*)req->data;
 //     delete req;
 	
@@ -1019,9 +1017,9 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set(Napi::String::New(env,"tcp_pi_listen"), Napi::Function::New(env,js_tcp_pi_listen));
 	exports.Set(Napi::String::New(env,"tcp_pi_accept"), Napi::Function::New(env,js_tcp_pi_accept));
 	
-	// // my functions
-	// exports.Set(Napi::String::New(env,"map_to_json"), Napi::Function::New(env,map_to_json));
-	// exports.Set(Napi::String::New(env,"json_to_map"), Napi::Function::New(env,json_to_map));
+	// my functions
+	exports.Set(Napi::String::New(env,"map_to_json"), Napi::Function::New(env,map_to_json));
+	exports.Set(Napi::String::New(env,"json_to_map"), Napi::Function::New(env,json_to_map));
 
 	// exports.Set(Napi::String::New(env,"tcp_accept_async"), Napi::Function::New(env,tcp_accept_async));
 	// exports.Set(Napi::String::New(env,"receive_async"), Napi::Function::New(env,receive_async));
