@@ -801,7 +801,7 @@ class ReceiveWorker : public Napi::AsyncWorker {
 
     void OnOK() override {
         Napi::HandleScope scope(Env());
-        Callback().Call({Env().Null(), Napi::External<modbus_t>::New(Env(), ctx), Napi::Number::New(Env(),len), req_arr});
+        Callback().Call({Env().Null(), Napi::Number::New(Env(),len), req_arr});
     }
 
     private:
