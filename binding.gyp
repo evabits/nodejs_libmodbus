@@ -9,21 +9,16 @@
         {
             'target_name': 'modbus_binding',
             "include_dirs" : [
-                "<!@(node -p \"require('node-addon-api').include\")"
+                "<!@(node -p \"require('node-addon-api').include\")",
+                "<(libmodbus_include)"
             ],
-            # 'defines': [ 'DEBUG', '_DEBUG' ],
-            # 'cflags': [ '-g', '-O0' ],
+            'defines': [ 'DEBUG', '_DEBUG' ],
+            'cflags': [ '-g', '-O0' ],
             "defines": ['NAPI_DISABLE_CPP_EXCEPTIONS'],
-            "conditions": [
-                ["libmodbus == 'internal'", {
-                    "include_dirs": [ "<(libmodbus_include)" ],
-                    "libraries": [
-                    "-l<(libmodbus_libname)"
-                    ],
-                    "conditions": [ [ "OS=='linux'", {"libraries+":["-Wl,-rpath=<@(libmodbus)/lib"]} ] ],
-                }
-                ]
+            "libraries": [
+            "-l<(libmodbus_libname)"
             ],
+            "conditions": [ [ "OS=='linux'", {"libraries+":["-Wl,-rpath=<@(libmodbus)/lib"]} ] ],
             'sources': [
                 './src/main.cc'
             ],
