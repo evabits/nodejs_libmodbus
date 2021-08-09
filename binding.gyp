@@ -13,7 +13,8 @@
                 "<(libmodbus_include)"
             ],
             'defines': [ 'DEBUG', '_DEBUG' ],
-            'cflags': [ '-g', '-O0' ],
+            'cflags': [ '-ggdb', '-O0' ],
+            'cflags_cc+': [ '-ggdb', '-O0' ],
             "defines": ['NAPI_DISABLE_CPP_EXCEPTIONS'],
             "libraries": [
             "-l<(libmodbus_libname)"

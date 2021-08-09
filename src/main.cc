@@ -559,6 +559,16 @@ Napi::Value js_receive(const Napi::CallbackInfo& info) {
 // int modbus_reply(modbus_t *ctx, const uint8_t *req, int req_length, modbus_mapping_t *mb_mapping);
 // Integer reply(External, Array, Integer, External);
 Napi::Value js_reply(const Napi::CallbackInfo& info) {
+	if (info.Length() != 4) {
+		Napi::Error::New(info.Env(), "Expected exactly four arguments")
+			.ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	if (!info[1].IsArray()) {
+		Napi::Error::New(info.Env(), "Expected an ArrayBuffer")
+			.ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	Napi::Array req_arr = info[1].As<Napi::Array>();
 	int req_length = info[2].As<Napi::Number>().Int32Value();
@@ -793,22 +803,24 @@ class ReceiveWorker : public Napi::AsyncWorker {
     void Execute() override {
         // Need to simulate cpu heavy task
 		len = modbus_receive(ctx, recv_buffer);
-		req_arr = Napi::Array();
-		if (len > 0) {
-			for (int i = 0; i < len; i++) req_arr.Set(uint32_t(i), uint32_t(recv_buffer[i]));
+		for (int i = 0; i < len;i++) {
+			printf("Recvd: %d = %d\n", i, recv_buffer[i]);
 		}
     }
 
     void OnOK() override {
         Napi::HandleScope scope(Env());
-        Callback().Call({Env().Null(), Napi::Number::New(Env(),len), req_arr});
+		Napi::Array req_arr = Napi::Array::New(Env(), len);
+		if (len > 0) {
+			for (int i = 0; i < len; i++) req_arr.Set(uint32_t(i), uint32_t(recv_buffer[i]));
+		}
+        Callback().Call({req_arr, Napi::Number::New(Env(),len)});
     }
 
     private:
         modbus_t *ctx;
 		uint8_t recv_buffer[8192];
 		uint16_t len;
-		Napi::Array req_arr;
 };
 
 
@@ -887,7 +899,7 @@ class ConnectWorker : public Napi::AsyncWorker {
 
     void OnOK() override {
         Napi::HandleScope scope(Env());
-        Callback().Call({Env().Null(), Napi::Number::New(Env(),ret)});
+        Callback().Call({Napi::Number::New(Env(),ret)});
     }
 
     private:

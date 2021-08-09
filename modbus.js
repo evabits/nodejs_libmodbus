@@ -664,6 +664,7 @@ function createData(a, args) {
 	// внутренние функции
 	api._reply = function (ctx, query, len) {
 		data_query = query;
+		console.log("Query", query);
 		mb.reply(ctx, query, len, map);
 		read(); // FIXME: делается в геттерах
 	};
@@ -848,7 +849,9 @@ function createSlaveRtu(a, con, data, cbs) {
 		isWorking = true;
 		
 		function recive() {
+			console.log("Receive called")
 			mb.receive_async(ctx, function (query, len) {
+				console.log("Receive q:", query, " len:",len)
 				if (len == -1) { // пока нету данных
 					if (isWorking) recive();
 					return;
