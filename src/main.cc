@@ -744,7 +744,7 @@ class ConnectWorkerTcp : public Napi::AsyncWorker {
     void Execute() override {
         // Need to simulate cpu heavy task
 		// ret = modbus_connect(ctx);
-		ret = modbus_tcp_accept(ctx,&socket)
+		ret = modbus_tcp_accept(ctx, socket)
     }
 
     void OnOK() override {
