@@ -559,6 +559,16 @@ Napi::Value js_receive(const Napi::CallbackInfo& info) {
 // int modbus_reply(modbus_t *ctx, const uint8_t *req, int req_length, modbus_mapping_t *mb_mapping);
 // Integer reply(External, Array, Integer, External);
 Napi::Value js_reply(const Napi::CallbackInfo& info) {
+	if (info.Length() != 4) {
+		Napi::Error::New(info.Env(), "Expected exactly four arguments")
+			.ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	if (!info[1].IsArray()) {
+		Napi::Error::New(info.Env(), "Expected an ArrayBuffer")
+			.ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
 	Napi::Array req_arr = info[1].As<Napi::Array>();
 	int req_length = info[2].As<Napi::Number>().Int32Value();
@@ -624,132 +634,154 @@ Napi::Value js_tcp_pi_accept(const Napi::CallbackInfo& info) {
 	return Napi::Number::New(info.Env(), ret);
 }
 
-// // convert modbus_mapping_t* to json object
-// // Undefined map_to_json(External, Object);
-// void map_to_json(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[0]));
-// 	Local<Object> jso = Local<Object>::Cast(args[1]);
+// convert modbus_mapping_t* to json object
+// Undefined map_to_json(External, Object);
+Napi::Value map_to_json(const Napi::CallbackInfo& info) {
+	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(info[0].As<Napi::External<modbus_mapping_t>>().Data());
+	Napi::Object jso = info[1].As<Napi::Object>();
 	
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_bits"), Integer::New(isolate, map->nb_bits));
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_input_bits"), Integer::New(isolate, map->nb_input_bits));
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_input_registers"), Integer::New(isolate, map->nb_input_registers));
-// 	jso->Set(String::NewFromUtf8(isolate, "nb_registers"), Integer::New(isolate, map->nb_registers));
+	jso.Set("nb_bits", uint32_t(map->nb_bits));
+	jso.Set("nb_input_bits", uint32_t(map->nb_input_bits));
+	jso.Set("nb_input_registers", uint32_t(map->nb_input_registers));
+	jso.Set("nb_registers", uint32_t(map->nb_registers));
 	
-// 	Local<Array> tab_bits = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_bits; i++) {
-// 		tab_bits->Set(i, Integer::New(isolate, map->tab_bits[i]));
-// 	}
+	Napi::Array tab_bits = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_bits; i++) {
+		tab_bits.Set(uint32_t(i), uint32_t(map->tab_bits[i]));
+	}
 	
-// 	Local<Array> tab_input_bits = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_input_bits; i++) {
-// 		tab_input_bits->Set(i, Integer::New(isolate, map->tab_input_bits[i]));
-// 	}
+	Napi::Array tab_input_bits = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_input_bits; i++) {
+		tab_input_bits.Set(uint32_t(i), uint32_t(map->tab_input_bits[i]));
+	}
 	
-// 	Local<Array> tab_input_registers = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_input_registers; i++) {
-// 		tab_input_registers->Set(i, Integer::New(isolate, map->tab_input_registers[i]));
-// 	}
+	Napi::Array tab_input_registers = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_input_registers; i++) {
+		tab_input_registers.Set(uint32_t(i), uint32_t(map->tab_input_registers[i]));
+	}
 	
-// 	Local<Array> tab_registers = Array::New(isolate);
-// 	for (int i = 0; i < map->nb_registers; i++) {
-// 		tab_registers->Set(i, Integer::New(isolate, map->tab_registers[i]));
-// 	}
+	Napi::Array tab_registers = Napi::Array::New(info.Env());
+	for (int i = 0; i < map->nb_registers; i++) {
+		tab_registers.Set(uint32_t(i), uint32_t(map->tab_registers[i]));
+	}
 	
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_bits"), tab_bits);
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_input_bits"), tab_input_bits);
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_input_registers"), tab_input_registers);
-// 	jso->Set(String::NewFromUtf8(isolate, "tab_registers"), tab_registers);
+	jso.Set("tab_bits", tab_bits);
+	jso.Set("tab_input_bits", tab_input_bits);
+	jso.Set("tab_input_registers", tab_input_registers);
+	jso.Set("tab_registers", tab_registers);
 	
-// 	args.GetReturnValue().SetUndefined();
-// }
+	return info.Env().Undefined();
+}
 
-// // convert json object to modbus_mapping_t*
-// // Undefined json_to_map(Object, External);
-// void json_to_map(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	Local<Object> jso = Local<Object>::Cast(args[0]);
-// 	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(FROM_EXTERNAL(args[1]));
+// convert json object to modbus_mapping_t*
+// Undefined json_to_map(Object, External);
+Napi::Value json_to_map(const Napi::CallbackInfo& info) {
+	Napi::Object jso = info[0].As<Napi::Object>();
+	modbus_mapping_t *map = static_cast<modbus_mapping_t *>(info[1].As<Napi::External<modbus_mapping_t>>().Data());
 	
-// 	map->nb_bits = jso->Get(String::NewFromUtf8(isolate, "nb_bits"))->Int32Value();
-// 	map->nb_input_bits = jso->Get(String::NewFromUtf8(isolate, "nb_input_bits"))->Int32Value();
-// 	map->nb_input_registers = jso->Get(String::NewFromUtf8(isolate, "nb_input_registers"))->Int32Value();
-// 	map->nb_registers = jso->Get(String::NewFromUtf8(isolate, "nb_registers"))->Int32Value();
+	map->nb_bits = jso.Get("nb_bits").As<Napi::Number>().Int32Value();
+	map->nb_input_bits = jso.Get("nb_input_bits").As<Napi::Number>().Int32Value();
+	map->nb_input_registers = jso.Get("nb_input_registers").As<Napi::Number>().Int32Value();
+	map->nb_registers = jso.Get("nb_registers").As<Napi::Number>().Int32Value();
 	
-// 	Local<Array> tab_bits = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_bits")));
-// 	for (int i = 0; i < map->nb_bits; i++) {
-// 		map->tab_bits[i] = tab_bits->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_bits = jso.Get("tab_bits").As<Napi::Array>();
+	for (int i = 0; i < map->nb_bits; i++) {
+		map->tab_bits[i] = tab_bits.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	Local<Array> tab_input_bits = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_input_bits")));
-// 	for (int i = 0; i < map->nb_input_bits; i++) {
-// 		map->tab_input_bits[i] = tab_input_bits->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_input_bits = jso.Get("tab_input_bits").As<Napi::Array>();
+	for (int i = 0; i < map->nb_input_bits; i++) {
+		map->tab_input_bits[i] = tab_input_bits.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	Local<Array> tab_input_registers = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_input_registers")));
-// 	for (int i = 0; i < map->nb_input_registers; i++) {
-// 		map->tab_input_registers[i] = tab_input_registers->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_input_registers = jso.Get("tab_input_registers").As<Napi::Array>();
+	for (int i = 0; i < map->nb_input_registers; i++) {
+		map->tab_input_registers[i] = tab_input_registers.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	Local<Array> tab_registers = Local<Array>::Cast(jso->Get(String::NewFromUtf8(isolate, "tab_registers")));
-// 	for (int i = 0; i < map->nb_registers; i++) {
-// 		map->tab_registers[i] = tab_registers->Get(i)->Int32Value();
-// 	}
+	Napi::Array tab_registers = jso.Get("tab_registers").As<Napi::Array>();
+	for (int i = 0; i < map->nb_registers; i++) {
+		map->tab_registers[i] = tab_registers.Get(i).As<Napi::Number>().Int32Value();
+	}
 	
-// 	args.GetReturnValue().SetUndefined();
-// }
+	return info.Env().Undefined();
+}
+/*
+	struct tcp_accept_t {
+		modbus_t *ctx;
+		int socket;
+		Napi::FunctionReference cb;
+		int ret;
+	};
 
-// struct tcp_accept_t {
-//     modbus_t *ctx;
-//     int socket;
-//     Persistent<Function> cb;
-//     int ret;
-// };
+	void tcp_accept_w(uv_work_t* req) {
+		tcp_accept_t* request = (tcp_accept_t*)req->data;
+		request->ret = modbus_tcp_accept(request->ctx, &(request->socket));
+	}
 
-// void tcp_accept_w(uv_work_t* req) {
-//     tcp_accept_t* request = (tcp_accept_t*)req->data;
-//     request->ret = modbus_tcp_accept(request->ctx, &(request->socket));
-// }
+	void tcp_accept_a(uv_work_t* req, int arg) {
+		tcp_accept_t* request = (tcp_accept_t*)req->data;
+		delete req;
+		
+		Handle<Value> argv[1];
+		argv[0] = Integer::New(isolate, request->ret);
 
-// void tcp_accept_a(uv_work_t* req, int arg) {
-//     Isolate* isolate = v8::Isolate::GetCurrent();
-//     HandleScope scope(isolate);
-//     tcp_accept_t* request = (tcp_accept_t*)req->data;
-//     delete req;
-	
-//     Handle<Value> argv[1];
-//     argv[0] = Integer::New(isolate, request->ret);
+		v8::Local<v8::Function> lf = v8::Local<v8::Function>::New(isolate,request->cb);
+		lf->Call(Null(isolate), 1, argv);
+		
+		request->cb.Reset();
+		delete request;
+	}
+*/
 
-//     v8::Local<v8::Function> lf = v8::Local<v8::Function>::New(isolate,request->cb);
-//     lf->Call(Null(isolate), 1, argv);
-	
-//     request->cb.Reset();
-//     delete request;
-// }
+class ConnectWorkerTcp : public Napi::AsyncWorker {
+    public:
+        ConnectWorkerTcp(Napi::Function& callback, modbus_t * ctx, int *socket)
+        : AsyncWorker(callback), ctx(ctx){}
 
-// // Undefined tcp_accept_async(External, Integer, Function);
-// // callback function - Function(Integer);
-// void tcp_accept_async(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
-// 	int socket = info[1].As<Napi::Number>().Int32Value();
-// 	Local<Function> cb = Local<Function>::Cast(args[2]);
-	
-// 	tcp_accept_t* request = new tcp_accept_t;
-// 	request->ctx = ctx;
-// 	request->socket = socket;
-// 	request->cb.Reset(isolate, cb);
-	
-// 	uv_work_t* req = new uv_work_t();
-// 	req->data = request;
-	
-// 	uv_queue_work(uv_default_loop(), req, tcp_accept_w, tcp_accept_a);
-	
-// 	args.GetReturnValue().SetUndefined();
-// }
+        ~ConnectWorkerTcp() {}
+    // This code will be executed on the worker thread
+    void Execute() override {
+        // Need to simulate cpu heavy task
+		// ret = modbus_connect(ctx);
+		ret = js_tcp_accept(ctx,&socket)
+    }
+
+    void OnOK() override {
+        Napi::HandleScope scope(Env());
+        Callback().Call({Napi::Number::New(Env(),ret)});
+    }
+
+    private:
+        modbus_t *ctx;
+		int ret;
+		int *socket;
+};
+
+// Undefined tcp_accept_async(External, Integer, Function);
+// callback function - Function(Integer);
+void js_tcp_accept_async(const Napi::CallbackInfo& info) {
+	//Isolate* isolate = v8::Isolate::GetCurrent();
+	//HandleScope scope(isolate);
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	//int socket = info[1].As<Napi::Number>().Int32Value();
+	int socket = info[1].As<Napi::Number>().Int32Value();
+	//Local<Function> cb = Local<Function>::Cast(args[2]);
+	Napi::Function cb = info[2].As<Napi::Function>();
+
+	//tcp_accept_t* request = new tcp_accept_t;
+	//request->ctx = ctx;
+	//request->socket = socket;
+	//request->cb.Reset(isolate, cb);
+	//uv_work_t* req = new uv_work_t();
+	//req->data = request;
+	//uv_queue_work(uv_default_loop(), req, tcp_accept_w, tcp_accept_a);
+	//args.GetReturnValue().SetUndefined();
+
+	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx, &socket);
+    wk->Queue();
+    return info.Env().Undefined();
+}
 
 // struct receive_t {
 //     modbus_t *ctx;
@@ -789,8 +821,39 @@ Napi::Value js_tcp_pi_accept(const Napi::CallbackInfo& info) {
 //     delete request;
 // }
 
-// // Undefined receive_async(External, Function);
-// // callback function - Function(Array, Integer);
+class ReceiveWorker : public Napi::AsyncWorker {
+    public:
+        ReceiveWorker(Napi::Function& callback, modbus_t * ctx)
+        : AsyncWorker(callback), ctx(ctx){}
+
+        ~ReceiveWorker() {}
+    // This code will be executed on the worker thread
+    void Execute() override {
+        // Need to simulate cpu heavy task
+		len = modbus_receive(ctx, recv_buffer);
+		for (int i = 0; i < len;i++) {
+			printf("Recvd: %d = %d\n", i, recv_buffer[i]);
+		}
+    }
+
+    void OnOK() override {
+        Napi::HandleScope scope(Env());
+		Napi::Array req_arr = Napi::Array::New(Env(), len);
+		if (len > 0) {
+			for (int i = 0; i < len; i++) req_arr.Set(uint32_t(i), uint32_t(recv_buffer[i]));
+		}
+        Callback().Call({req_arr, Napi::Number::New(Env(),len)});
+    }
+
+    private:
+        modbus_t *ctx;
+		uint8_t recv_buffer[8192];
+		uint16_t len;
+};
+
+
+// Undefined receive_async(External, Function);
+// callback function - Function(Array, Integer);
 // void receive_async(const Napi::CallbackInfo& info) {
 // 	Isolate* isolate = v8::Isolate::GetCurrent();
 // 	HandleScope scope(isolate);
@@ -813,6 +876,15 @@ Napi::Value js_tcp_pi_accept(const Napi::CallbackInfo& info) {
 	
 // 	args.GetReturnValue().SetUndefined();
 // }
+
+Napi::Value receive_async(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	Napi::Function cb = info[1].As<Napi::Function>();
+		
+	ReceiveWorker* wk = new ReceiveWorker(cb, ctx);
+    wk->Queue();
+    return info.Env().Undefined();
+}
 
 // struct connect_t {
 //     modbus_t *ctx;
@@ -841,26 +913,38 @@ Napi::Value js_tcp_pi_accept(const Napi::CallbackInfo& info) {
 //     delete request;
 // }
 
-// // Undefined connect_async(External, Function);
-// // callback function - Function(Integer);
-// void connect_async(const Napi::CallbackInfo& info) {
-// 	Isolate* isolate = v8::Isolate::GetCurrent();
-// 	HandleScope scope(isolate);
-// 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
-// 	Local<Function> cb = Local<Function>::Cast(args[1]);
-	
-// 	connect_t* request = new connect_t;
-// 	request->ctx = ctx;
-// 	request->cb.Reset(isolate, cb);
-// 	request->ret = 0;
-	
-// 	uv_work_t* req = new uv_work_t();
-// 	req->data = request;
-	
-// 	uv_queue_work(uv_default_loop(), req, connect_w, connect_a);
-	
-// 	args.GetReturnValue().SetUndefined();
-// }
+class ConnectWorker : public Napi::AsyncWorker {
+    public:
+        ConnectWorker(Napi::Function& callback, modbus_t * ctx)
+        : AsyncWorker(callback), ctx(ctx){}
+
+        ~ConnectWorker() {}
+    // This code will be executed on the worker thread
+    void Execute() override {
+        // Need to simulate cpu heavy task
+		ret = modbus_connect(ctx);
+    }
+
+    void OnOK() override {
+        Napi::HandleScope scope(Env());
+        Callback().Call({Napi::Number::New(Env(),ret)});
+    }
+
+    private:
+        modbus_t *ctx;
+		int ret;
+};
+
+// Undefined connect_async(External, Function);
+// callback function - Function(Integer);
+Napi::Value connect_async(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	Napi::Function cb = info[1].As<Napi::Function>();
+		
+	ConnectWorker* wk = new ConnectWorker(cb, ctx);
+    wk->Queue();
+    return info.Env().Undefined();
+}
 
 // // закрыть из треда
 // // Undefined close(External);
@@ -925,6 +1009,8 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set(Napi::String::New(env,"MODBUS_MAX_READ_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_READ_REGISTERS));
 	exports.Set(Napi::String::New(env,"MODBUS_MAX_WRITE_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_WRITE_REGISTERS));
 	exports.Set(Napi::String::New(env,"MODBUS_MAX_WR_WRITE_REGISTERS"), Napi::Number::New(env,MODBUS_MAX_WR_WRITE_REGISTERS));
+
+	exports.Set(Napi::String::New(env,"MODBUS_RTU_RTS_NONE"), Napi::Number::New(env,MODBUS_RTU_RTS_NONE));
 
 	exports.Set(Napi::String::New(env,"MODBUS_ENOBASE"), Napi::Number::New(env,MODBUS_ENOBASE));
 
@@ -1023,13 +1109,13 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set(Napi::String::New(env,"tcp_pi_listen"), Napi::Function::New(env,js_tcp_pi_listen));
 	exports.Set(Napi::String::New(env,"tcp_pi_accept"), Napi::Function::New(env,js_tcp_pi_accept));
 	
-	// // my functions
-	// exports.Set(Napi::String::New(env,"map_to_json"), Napi::Function::New(env,map_to_json));
-	// exports.Set(Napi::String::New(env,"json_to_map"), Napi::Function::New(env,json_to_map));
+	// my functions
+	exports.Set(Napi::String::New(env,"map_to_json"), Napi::Function::New(env,map_to_json));
+	exports.Set(Napi::String::New(env,"json_to_map"), Napi::Function::New(env,json_to_map));
 
-	// exports.Set(Napi::String::New(env,"tcp_accept_async"), Napi::Function::New(env,tcp_accept_async));
-	// exports.Set(Napi::String::New(env,"receive_async"), Napi::Function::New(env,receive_async));
-	// exports.Set(Napi::String::New(env,"connect_async"), Napi::Function::New(env,connect_async));
+	exports.Set(Napi::String::New(env,"tcp_accept_async"), Napi::Function::New(env,js_tcp_accept_async));
+	exports.Set(Napi::String::New(env,"receive_async"), Napi::Function::New(env,receive_async));
+	exports.Set(Napi::String::New(env,"connect_async"), Napi::Function::New(env,connect_async));
 	// exports.Set(Napi::String::New(env,"close_mt"), Napi::Function::New(env,close_mt));
 
 	// // HEX Decoding stuff
