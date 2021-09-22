@@ -744,7 +744,7 @@ class ConnectWorkerTcp : public Napi::AsyncWorker {
     void Execute() override {
         // Need to simulate cpu heavy task
 		// ret = modbus_connect(ctx);
-		ret = js_tcp_accept(ctx,&socket)
+		ret = modbus_tcp_accept(ctx,&socket)
     }
 
     void OnOK() override {
@@ -780,7 +780,8 @@ void js_tcp_accept_async(const Napi::CallbackInfo& info) {
 
 	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx, &socket);
     wk->Queue();
-    return info.Env().Undefined();
+	info.Env().Undefined();
+    //return info.Env().Undefined();
 }
 
 // struct receive_t {
