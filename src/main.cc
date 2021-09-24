@@ -736,7 +736,7 @@ Napi::Value json_to_map(const Napi::CallbackInfo& info) {
 
 class ConnectWorkerTcp : public Napi::AsyncWorker {
     public:
-        ConnectWorkerTcp(Napi::Function& callback, modbus_t * ctx, int *socket)
+        ConnectWorkerTcp(Napi::Function& callback, modbus_t * ctx)
         : AsyncWorker(callback), ctx(ctx){}
 
         ~ConnectWorkerTcp() {}
@@ -755,7 +755,7 @@ class ConnectWorkerTcp : public Napi::AsyncWorker {
     private:
         modbus_t *ctx;
 		int ret;
-		int *socket;
+		//int *socket;
 };
 
 // Undefined tcp_accept_async(External, Integer, Function);
@@ -778,7 +778,10 @@ void js_tcp_accept_async(const Napi::CallbackInfo& info) {
 	//uv_queue_work(uv_default_loop(), req, tcp_accept_w, tcp_accept_a);
 	//args.GetReturnValue().SetUndefined();
 
-	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx, &socket);
+	int socket = info[1].As<Napi::Number>().Int32Value();
+	modbus_set_socket(ctx, socket);
+
+	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx);
     wk->Queue();
 	//info.Env().Undefined();
     //return info.Env().Undefined();
