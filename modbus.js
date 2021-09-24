@@ -776,9 +776,12 @@ function createSlaveTcp(a, con, data, cbs) {
 			if (isWorking) accept(ctx, sock);
 			
 			function recive() {
+				console.log( 'recive' )
 				mb.receive_async(ctx, function (query, len) {
 					// клиент закрыл соединение
 					if (len == -1) return;
+					console.log( 'receive async' )
+					console.log( 'len', len )
 					
 					// обрабатываем данные и отвечаем клиенту
 					data._reply(ctx, query, len);

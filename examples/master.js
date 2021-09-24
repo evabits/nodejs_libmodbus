@@ -12,8 +12,8 @@ mb.onError(function (msg) {
 var ctx = mb.createMaster({
 
   // connection type and params
-  // con: mb.createConTcp('127.0.0.1', 1502),
-  con: mb.createConRtu(1, '/dev/ttyS1', 9600),
+  //con: mb.createConTcp('127.0.0.1', 1502),
+  con: mb.createConRtu(1, '/dev/ttyACM0', 9600),
 
   // callback functions
   onConnect: function () {

@@ -760,7 +760,7 @@ class ConnectWorkerTcp : public Napi::AsyncWorker {
 
 // Undefined tcp_accept_async(External, Integer, Function);
 // callback function - Function(Integer);
-void js_tcp_accept_async(const Napi::CallbackInfo& info) {
+Napi::Value js_tcp_accept_async(const Napi::CallbackInfo& info) {
 	//Isolate* isolate = v8::Isolate::GetCurrent();
 	//HandleScope scope(isolate);
 	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
@@ -778,12 +778,13 @@ void js_tcp_accept_async(const Napi::CallbackInfo& info) {
 	//uv_queue_work(uv_default_loop(), req, tcp_accept_w, tcp_accept_a);
 	//args.GetReturnValue().SetUndefined();
 
-	modbus_set_socket(ctx, socket);
+	//modbus_set_socket(ctx, socket);
 
 	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx, socket);
     wk->Queue();
 	//info.Env().Undefined();
     //return info.Env().Undefined();
+	return info.Env().Undefined();
 }
 
 // struct receive_t {
@@ -833,10 +834,13 @@ class ReceiveWorker : public Napi::AsyncWorker {
     // This code will be executed on the worker thread
     void Execute() override {
         // Need to simulate cpu heavy task
+		memset(recv_buffer, 0, MODBUS_TCP_MAX_ADU_LENGTH * sizeof(uint8_t));		
 		len = modbus_receive(ctx, recv_buffer);
+		/*
 		for (int i = 0; i < len;i++) {
 			printf("Recvd: %d = %d\n", i, recv_buffer[i]);
 		}
+		*/
     }
 
     void OnOK() override {
@@ -850,7 +854,7 @@ class ReceiveWorker : public Napi::AsyncWorker {
 
     private:
         modbus_t *ctx;
-		uint8_t recv_buffer[8192];
+		uint8_t recv_buffer[MODBUS_TCP_MAX_ADU_LENGTH];
 		uint16_t len;
 };
 
@@ -948,6 +952,16 @@ Napi::Value connect_async(const Napi::CallbackInfo& info) {
     wk->Queue();
     return info.Env().Undefined();
 }
+
+
+Napi::Value close_mt(const Napi::CallbackInfo& info) {
+	modbus_t *ctx = static_cast<modbus_t *>(info[0].As<Napi::External<modbus_t>>().Data());
+	
+	modbus_close(ctx);
+	
+	return info.Env().Undefined();
+}
+
 
 // // закрыть из треда
 // // Undefined close(External);
@@ -1119,7 +1133,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set(Napi::String::New(env,"tcp_accept_async"), Napi::Function::New(env,js_tcp_accept_async));
 	exports.Set(Napi::String::New(env,"receive_async"), Napi::Function::New(env,receive_async));
 	exports.Set(Napi::String::New(env,"connect_async"), Napi::Function::New(env,connect_async));
-	// exports.Set(Napi::String::New(env,"close_mt"), Napi::Function::New(env,close_mt));
+	exports.Set(Napi::String::New(env,"close_mt"), Napi::Function::New(env,close_mt));
 
 	// // HEX Decoding stuff
 	// exports.Set(Napi::String::New(env,"hex_decode", v8::String::kInternalizedString), Napi::Function::New(env,hex_decode));

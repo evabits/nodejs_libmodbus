@@ -1,24 +1,24 @@
 'use strict';
 
 var log = console.log;
-var mb = require('../modbus.js').create();
+var mb = require('../modbus.js').create(true);
 
 mb.onError(function (msg) {
-  log('ERROR', msg);
+  log('onError\n   ', msg);
 });
 
 // create device memory map
 var data = mb.createData({ countReg: 5, countBit: 2 });
 data.setReg(2, 321);
 data.setBit(1, true);
-data.dumpData(); // show memory map
+//data.dumpData(); // show memory map
 
 // create slave device
 var ctx = mb.createSlave({
 
   // connection type and params
-  // con: mb.createConTcp('127.0.0.1', 1502),
-  con: mb.createConRtu(1, '/dev/ttyACM0', 9600),
+  con: mb.createConTcp('127.0.0.1', 1502),
+  //con: mb.createConRtu(1, '/dev/ttyACM0', 9600),
 
   // data map
   data: data,
@@ -27,7 +27,7 @@ var ctx = mb.createSlave({
   onQuery: function () {
     log('onQuery');
     //ctx.dumpData();
-    log(ctx.getBits(0, 2));
+    //log(ctx.getBits(0, 2));
   },
   onDestroy: function () {
     log('onDestroy');
