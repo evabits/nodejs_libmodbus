@@ -778,7 +778,6 @@ void js_tcp_accept_async(const Napi::CallbackInfo& info) {
 	//uv_queue_work(uv_default_loop(), req, tcp_accept_w, tcp_accept_a);
 	//args.GetReturnValue().SetUndefined();
 
-	int socket = info[1].As<Napi::Number>().Int32Value();
 	modbus_set_socket(ctx, socket);
 
 	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx);
