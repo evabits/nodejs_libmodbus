@@ -5,6 +5,7 @@ var mb = require('../modbus.js').create(true);
 
 mb.onError(function (msg) {
   log('onError\n   ', msg);
+  ctx.destroy();
 });
 
 // create device memory map

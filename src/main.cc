@@ -751,7 +751,12 @@ class ConnectWorkerTcp : public Napi::AsyncWorker {
         Napi::HandleScope scope(Env());
         Callback().Call({Napi::Number::New(Env(),ret)});
     }
-
+/*
+	void OnWorkComplete(Napi::Env env, napi_status status) override {
+		Napi::HandleScope scope(Env());
+		Callback().Reset();
+	}
+*/
     private:
         modbus_t *ctx;
 		int ret;
@@ -855,7 +860,7 @@ class ReceiveWorker : public Napi::AsyncWorker {
     private:
         modbus_t *ctx;
 		uint8_t recv_buffer[MODBUS_TCP_MAX_ADU_LENGTH];
-		uint16_t len;
+		int16_t len;
 };
 
 
