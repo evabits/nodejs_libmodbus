@@ -736,15 +736,15 @@ Napi::Value json_to_map(const Napi::CallbackInfo& info) {
 
 class ConnectWorkerTcp : public Napi::AsyncWorker {
     public:
-        ConnectWorkerTcp(Napi::Function& callback, modbus_t * ctx)
-        : AsyncWorker(callback), ctx(ctx){}
+        ConnectWorkerTcp(Napi::Function& callback, modbus_t * ctx, int sock)
+        : AsyncWorker(callback), ctx(ctx), sock(sock){}
 
         ~ConnectWorkerTcp() {}
     // This code will be executed on the worker thread
     void Execute() override {
         // Need to simulate cpu heavy task
-		ret = modbus_connect(ctx);
-		//ret = modbus_tcp_accept(ctx, socket);
+		//ret = modbus_connect(ctx);
+		ret = modbus_tcp_accept(ctx, &sock);
     }
 
     void OnOK() override {
@@ -755,7 +755,7 @@ class ConnectWorkerTcp : public Napi::AsyncWorker {
     private:
         modbus_t *ctx;
 		int ret;
-		//int *socket;
+		int sock;
 };
 
 // Undefined tcp_accept_async(External, Integer, Function);
@@ -780,7 +780,7 @@ void js_tcp_accept_async(const Napi::CallbackInfo& info) {
 
 	modbus_set_socket(ctx, socket);
 
-	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx);
+	ConnectWorkerTcp* wk = new ConnectWorkerTcp(cb, ctx, socket);
     wk->Queue();
 	//info.Env().Undefined();
     //return info.Env().Undefined();
