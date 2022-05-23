@@ -776,12 +776,12 @@ function createSlaveTcp(a, con, data, cbs) {
 			if (isWorking) accept(ctx, sock);
 			
 			function recive() {
-				console.log( 'recive' )
+				//console.log( 'recive' )
 				mb.receive_async(ctx, function (query, len) {
 					// клиент закрыл соединение
 					if (len == -1) return;
-					console.log( 'receive async' )
-					console.log( 'len', len )
+					//console.log( 'receive async' )
+					//console.log( 'len', len )
 					
 					// обрабатываем данные и отвечаем клиенту
 					data._reply(ctx, query, len);
@@ -852,9 +852,9 @@ function createSlaveRtu(a, con, data, cbs) {
 		isWorking = true;
 		
 		function recive() {
-			console.log("Receive called")
+			//console.log("Receive called")
 			mb.receive_async(ctx, function (query, len) {
-				console.log("Receive q:", query, " len:",len)
+				//console.log("Receive q:", query, " len:",len)
 				if (len == -1) { // пока нету данных
 					if (isWorking) recive();
 					return;
